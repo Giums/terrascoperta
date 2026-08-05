@@ -1,0 +1,79 @@
+import { layerMinZoom, sentinelHubAvailable, type SatelliteLayerId } from "../../utils/satellite-layers";
+import "./LayerControls.css";
+
+interface LayerControlsProps {
+  layer: SatelliteLayerId;
+  onLayerChange: (layer: SatelliteLayerId) => void;
+  date: string;
+  onDateChange: (date: string) => void;
+}
+
+const SENTINEL_OPTIONS: { id: SatelliteLayerId; label: string }[] = [
+  { id: "s2-true-color", label: "Vero colore (Sentinel-2, 10m)" },
+  { id: "s2-ndvi", label: "Vegetazione — NDVI (Sentinel-2, 10m)" },
+  { id: "s3-lst", label: "Temperatura superficie (Sentinel-3, ~1km)" },
+];
+
+const GIBS_OPTIONS: { id: SatelliteLayerId; label: string }[] = [
+  { id: "gibs-lst-day", label: "Temperatura superficie — giorno" },
+  { id: "gibs-lst-night", label: "Temperatura superficie — notte" },
+  { id: "gibs-ndvi", label: "Vegetazione (NDVI)" },
+];
+
+function todayMinus(days: number): string {
+  const d = new Date();
+  d.setDate(d.getDate() - days);
+  return d.toISOString().slice(0, 10);
+}
+
+export default function LayerControls({ layer, onLayerChange, date, onDateChange }: LayerControlsProps) {
+  const minZoom = layerMinZoom(layer);
+
+  return (
+    <div className="layer-controls">
+      <label className="layer-controls__label" htmlFor="layer-select">
+        Layer satellitare
+      </label>
+      <select
+        id="layer-select"
+        value={layer}
+        onChange={(e) => onLayerChange(e.target.value as SatelliteLayerId)}
+      >
+        <option value="none">Solo mappa base</option>
+        {sentinelHubAvailable && (
+          <optgroup label="Copernicus Sentinel Hub">
+            {SENTINEL_OPTIONS.map((opt) => (
+              <option key={opt.id} value={opt.id}>
+                {opt.label}
+              </option>
+            ))}
+          </optgroup>
+        )}
+        <optgroup label="NASA GIBS / MODIS (backup, no auth)">
+          {GIBS_OPTIONS.map((opt) => (
+            <option key={opt.id} value={opt.id}>
+              {opt.label}
+            </option>
+          ))}
+        </optgroup>
+      </select>
+      {layer !== "none" && (
+        <>
+          <label className="layer-controls__label" htmlFor="layer-date">
+            Data (i dati satellitari hanno ~2 giorni di latenza)
+          </label>
+          <input
+            id="layer-date"
+            type="date"
+            value={date}
+            max={todayMinus(2)}
+            onChange={(e) => onDateChange(e.target.value)}
+          />
+        </>
+      )}
+      {minZoom != null && (
+        <p className="layer-controls__hint">Zoom su una città per vedere questo layer (10m di risoluzione).</p>
+      )}
+    </div>
+  );
+}

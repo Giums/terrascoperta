@@ -1,0 +1,393 @@
+.city-detail {
+  padding: 1.25rem;
+  color: #e2e8f0;
+}
+
+.city-detail__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.city-detail__header h2 {
+  margin: 0 0 0.25rem;
+  font-size: 1.4rem;
+}
+
+.city-detail__meta {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #94a3b8;
+}
+
+.city-detail__close {
+  background: none;
+  border: none;
+  color: #94a3b8;
+  font-size: 1.5rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0.15rem 0.5rem;
+  border-radius: 6px;
+}
+
+.city-detail__close:hover,
+.city-detail__close:focus {
+  background: rgba(255, 255, 255, 0.08);
+  color: #f1f5f9;
+}
+
+.city-detail__section {
+  margin-bottom: 1.5rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.city-detail__section:last-child {
+  border-bottom: none;
+}
+
+.city-detail__section h3 {
+  font-size: 0.95rem;
+  color: #f1f5f9;
+  margin: 0 0 0.75rem;
+}
+
+.city-detail__cycle p {
+  font-size: 0.88rem;
+  line-height: 1.55;
+  color: #cbd5e1;
+}
+
+.city-detail__urgency {
+  padding: 0.9rem 1rem;
+  background: rgba(251, 146, 60, 0.08);
+  border: 1px solid rgba(251, 146, 60, 0.25);
+  border-radius: 10px;
+  border-bottom: 1px solid rgba(251, 146, 60, 0.25);
+}
+
+.city-detail__urgency p {
+  margin: 0;
+  font-size: 0.85rem;
+  line-height: 1.55;
+  color: #fed7aa;
+}
+
+.city-detail__urgency strong {
+  color: #fb923c;
+}
+
+/* WeatherLive */
+.weather-live__status {
+  font-size: 0.85rem;
+  color: #94a3b8;
+}
+
+.weather-live__main {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  margin-bottom: 0.75rem;
+}
+
+.weather-live__temp {
+  font-size: 2rem;
+  font-weight: 600;
+}
+
+.weather-live__feel {
+  font-size: 0.85rem;
+  color: #94a3b8;
+}
+
+.weather-live__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.6rem 1rem;
+  margin: 0 0 0.5rem;
+}
+
+.weather-live__grid dt {
+  font-size: 0.75rem;
+  color: #94a3b8;
+}
+
+.weather-live__grid dd {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+
+.weather-live__source {
+  font-size: 0.72rem;
+  color: #64748b;
+  margin: 0;
+}
+
+/* HistoricalComparison */
+.historical-comparison__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.6rem 1rem;
+  margin: 0 0 0.5rem;
+}
+
+.historical-comparison__grid dt {
+  font-size: 0.75rem;
+  color: #94a3b8;
+}
+
+.historical-comparison__grid dd {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+
+.historical-comparison__delta--up {
+  color: #fb923c;
+  font-weight: 600;
+}
+
+.historical-comparison__delta--down {
+  color: #4ade80;
+  font-weight: 600;
+}
+
+/* Simulator */
+.simulator__field {
+  margin-bottom: 0.9rem;
+}
+
+.simulator__field label {
+  display: block;
+  font-size: 0.85rem;
+  margin-bottom: 0.35rem;
+  color: #cbd5e1;
+}
+
+.simulator__field input[type="range"] {
+  width: 100%;
+}
+
+.simulator__result {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 1rem 0 0.5rem;
+  padding: 0.75rem;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 8px;
+}
+
+.simulator__result > div:not(.simulator__arrow) {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.simulator__label {
+  font-size: 0.72rem;
+  color: #94a3b8;
+}
+
+.simulator__value {
+  font-size: 1.15rem;
+  font-weight: 600;
+}
+
+.simulator__value--good {
+  color: #4ade80;
+}
+
+.simulator__arrow {
+  color: #64748b;
+}
+
+.simulator__note {
+  font-size: 0.75rem;
+  color: #64748b;
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* DissipationChart */
+.dissipation-chart {
+  margin-top: 1rem;
+}
+
+.dissipation-chart svg {
+  width: 100%;
+  height: auto;
+}
+
+.dissipation-chart__grid {
+  stroke: rgba(255, 255, 255, 0.08);
+  stroke-width: 1;
+}
+
+.dissipation-chart__tick {
+  fill: #64748b;
+  font-size: 8px;
+}
+
+.dissipation-chart__line {
+  fill: none;
+  stroke-width: 2.5;
+}
+
+.dissipation-chart__line--baseline {
+  stroke: #fb923c;
+}
+
+.dissipation-chart__line--mitigated {
+  stroke: #4ade80;
+}
+
+.dissipation-chart__legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  margin: 0.4rem 0 0.6rem;
+  font-size: 0.72rem;
+  color: #cbd5e1;
+}
+
+.dissipation-chart__legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.dissipation-chart__swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  display: inline-block;
+}
+
+.dissipation-chart__swatch--baseline {
+  background: #fb923c;
+}
+
+.dissipation-chart__swatch--mitigated {
+  background: #4ade80;
+}
+
+/* CostEstimator */
+.cost-estimator__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem 1rem;
+  margin: 0 0 0.75rem;
+}
+
+.cost-estimator__grid dt {
+  font-size: 0.75rem;
+  color: #94a3b8;
+}
+
+.cost-estimator__grid dd {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.cost-estimator__note {
+  font-size: 0.75rem;
+  color: #64748b;
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* HomeActions */
+.home-actions__table {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  font-size: 0.78rem;
+  overflow-x: auto;
+}
+
+.home-actions__row {
+  display: grid;
+  grid-template-columns: 1.6fr 1fr 1.2fr 0.9fr 1fr;
+  gap: 0.5rem;
+  align-items: center;
+  padding: 0.5rem 0.4rem;
+  border-radius: 6px;
+}
+
+.home-actions__row:not(.home-actions__row--head):nth-child(odd) {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.home-actions__row--head {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: #94a3b8;
+}
+
+.home-actions__tag {
+  font-size: 0.7rem;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  text-align: center;
+  width: fit-content;
+}
+
+.home-actions__tag--diy {
+  background: rgba(74, 222, 128, 0.15);
+  color: #4ade80;
+}
+
+.home-actions__tag--pro {
+  background: rgba(251, 146, 60, 0.15);
+  color: #fb923c;
+}
+
+.solar-panel-note {
+  margin-top: 0.9rem;
+  padding-top: 0.9rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.solar-panel-note p {
+  font-size: 0.78rem;
+  line-height: 1.55;
+  color: #cbd5e1;
+  margin: 0 0 0.6rem;
+}
+
+.solar-panel-note p:last-child {
+  margin-bottom: 0;
+}
+
+.home-actions__note {
+  font-size: 0.75rem;
+  color: #64748b;
+  margin-top: 0.75rem;
+  line-height: 1.5;
+}
+
+@media (max-width: 480px) {
+  .home-actions__row {
+    grid-template-columns: 1fr;
+    gap: 0.15rem;
+  }
+
+  .home-actions__row--head {
+    display: none;
+  }
+
+  .home-actions__row:not(.home-actions__row--head) {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 0.6rem;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+  }
+}
