@@ -1,0 +1,21 @@
+[extend]
+useDefault = true
+
+[[rules]]
+id = "copernicus-client-secret"
+description = "Copernicus OAuth client secret"
+regex = '''(?i)(client.?secret|SENTINEL.*SECRET)\s*[=:]\s*['\"]?[a-zA-Z0-9\-_.]{20,}['\"]?'''
+tags = ["secret", "copernicus"]
+
+[[rules]]
+id = "generic-api-key"
+description = "Generic API key pattern"
+regex = '''(?i)(api[_-]?key|apikey|access[_-]?token)\s*[=:]\s*['\"]?[a-zA-Z0-9\-_.]{16,}['\"]?'''
+tags = ["secret", "api"]
+
+[allowlist]
+paths = [
+  '''.env.example''',
+  '''README.md''',
+  '''PROGETTO-UHI-ITALIA.md'''
+]
