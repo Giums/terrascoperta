@@ -3,7 +3,8 @@ interface HomeAction {
   cost: string;
   tempEffect: string;
   acSaving: string;
-  difficulty: "Fai da te" | "Professionista";
+  difficulty: "Fai da te" | "Professionista" | "Verifica strutturale" | "Fai da te · sperimentale";
+  note?: string;
 }
 
 const ACTIONS: HomeAction[] = [
@@ -26,7 +27,7 @@ const ACTIONS: HomeAction[] = [
     cost: "€ 80–150/m²",
     tempEffect: "−3 a −7 °C",
     acSaving: "−30–50%",
-    difficulty: "Professionista",
+    difficulty: "Verifica strutturale",
   },
   {
     name: "Rampicanti su facciate sud/ovest",
@@ -49,7 +50,30 @@ const ACTIONS: HomeAction[] = [
     acSaving: "—",
     difficulty: "Fai da te",
   },
+  {
+    name: "Pre-raffreddamento evaporativo del condizionatore",
+    cost: "€ 20–50 (micropompa + ugello)",
+    tempEffect: "—",
+    acSaving: "−5–15%",
+    difficulty: "Fai da te · sperimentale",
+    note: "Nebulizza l'acqua di condensa davanti all'unità esterna, raffreddando l'aria in ingresso al condensatore. Limiti: la condensa può non bastare nelle ore di picco, in climi molto umidi l'effetto si riduce, possibili depositi minerali sulle alette nel lungo periodo.",
+  },
+  {
+    name: "Versione con pannellino solare",
+    cost: "€ 30–60 (pannello 5–10W + pompa + ugello)",
+    tempEffect: "—",
+    acSaving: "come sopra",
+    difficulty: "Fai da te",
+    note: "Alimenta la micropompa del nebulizzatore con un pannello solare da giardino (5–12V DC), senza collegamento all'impianto elettrico: zero rischio folgorazione. Il sole alimenta il dispositivo che riduce il consumo causato dal sole.",
+  },
 ];
+
+const TAG_CLASS: Record<HomeAction["difficulty"], string> = {
+  "Fai da te": "home-actions__tag--diy",
+  Professionista: "home-actions__tag--pro",
+  "Verifica strutturale": "home-actions__tag--structural",
+  "Fai da te · sperimentale": "home-actions__tag--diy-exp",
+};
 
 export default function HomeActions() {
   return (
@@ -64,18 +88,14 @@ export default function HomeActions() {
         </div>
         {ACTIONS.map((action) => (
           <div className="home-actions__row" role="row" key={action.name}>
-            <span role="cell">{action.name}</span>
+            <span role="cell">
+              {action.name}
+              {action.note && <span className="home-actions__row-note">{action.note}</span>}
+            </span>
             <span role="cell">{action.cost}</span>
             <span role="cell">{action.tempEffect}</span>
             <span role="cell">{action.acSaving}</span>
-            <span
-              role="cell"
-              className={
-                action.difficulty === "Fai da te"
-                  ? "home-actions__tag home-actions__tag--diy"
-                  : "home-actions__tag home-actions__tag--pro"
-              }
-            >
+            <span role="cell" className={`home-actions__tag ${TAG_CLASS[action.difficulty]}`}>
               {action.difficulty}
             </span>
           </div>

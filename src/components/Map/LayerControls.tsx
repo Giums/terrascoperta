@@ -11,7 +11,8 @@ interface LayerControlsProps {
 const SENTINEL_OPTIONS: { id: SatelliteLayerId; label: string }[] = [
   { id: "s2-true-color", label: "Vero colore (Sentinel-2, 10m)" },
   { id: "s2-ndvi", label: "Vegetazione — NDVI (Sentinel-2, 10m)" },
-  { id: "s3-lst", label: "Temperatura superficie (Sentinel-3, ~1km)" },
+  { id: "s3-lst", label: "Temperatura superficie reale — LST (Sentinel-3, ~1km)" },
+  { id: "landsat-thermal", label: "Temperatura superficie (Landsat, ~30-100m) — copertura non garantita" },
 ];
 
 const GIBS_OPTIONS: { id: SatelliteLayerId; label: string }[] = [
@@ -73,6 +74,12 @@ export default function LayerControls({ layer, onLayerChange, date, onDateChange
       )}
       {minZoom != null && (
         <p className="layer-controls__hint">Zoom su una città per vedere questo layer (10m di risoluzione).</p>
+      )}
+      {layer === "landsat-thermal" && (
+        <p className="layer-controls__hint">
+          Landsat passa ogni ~8-16 giorni: se l'area è stata nuvolosa in tutti i passaggi recenti,
+          il layer può restare vuoto. Nessun errore — semplicemente non c'è un pixel valido.
+        </p>
       )}
     </div>
   );

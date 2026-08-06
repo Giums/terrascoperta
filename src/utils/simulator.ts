@@ -11,10 +11,9 @@ export function simulateMitigation(
 ): number {
   const greenReduction = 0.5 * (greenIncreasePct / 10);
   const albedoReduction = 0.3 * (albedoSurfacePct / 10);
-
   const combined = greenReduction + albedoReduction;
-  const total = combined * (1 - 0.05 * Math.min(combined / uhi, 1));
 
-  // Non si può eliminare il 100% dell'UHI — residuo termico urbano
-  return Math.min(total, uhi * 0.95);
+  // Rendimenti decrescenti: la riduzione satura verso l'UHI reale senza mai
+  // superarlo, senza soglia arbitraria (curva di saturazione esponenziale).
+  return uhi * (1 - Math.exp(-combined / uhi));
 }

@@ -7,6 +7,7 @@ import HistoricalComparison from "./HistoricalComparison";
 import Simulator from "./Simulator";
 import DissipationChart from "./DissipationChart";
 import CostEstimator from "./CostEstimator";
+import PersonalSavings from "./PersonalSavings";
 import HomeActions from "./HomeActions";
 import SolarPanelNote from "./SolarPanelNote";
 import "./CityDetail.css";
@@ -69,6 +70,11 @@ export default function CityDetail({ city, onClose }: CityDetailProps) {
       <section className="city-detail__section">
         <h3>Costi e benefici stimati</h3>
         <CostEstimator city={city} green={sim.green} albedo={sim.albedo} uhiReduction={sim.reduction} />
+      </section>
+
+      <section className="city-detail__section">
+        <h3>Quanto risparmi tu</h3>
+        <PersonalSavings referenceCity={city} green={sim.green} albedo={sim.albedo} uhiReduction={sim.reduction} />
       </section>
 
       <section className="city-detail__section city-detail__cycle">

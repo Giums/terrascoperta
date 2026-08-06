@@ -47,7 +47,9 @@ Da impostare in `.env.local` (mai committato — vedi [Sicurezza](#sicurezza)):
 | `VITE_SENTINEL_CLIENT_ID` | opzionale | Client ID OAuth Copernicus, sicuro da esporre |
 | `SENTINEL_CLIENT_SECRET` | opzionale | Client secret OAuth Copernicus — solo server-side, mai con prefisso `VITE_` |
 | `VITE_SENTINEL_INSTANCE_ID_S2` | opzionale | Instance ID della Configuration Sentinel Hub per un layer Sentinel-2 L2A |
-| `VITE_SENTINEL_INSTANCE_ID_S3` | opzionale | Instance ID della Configuration Sentinel Hub per un layer Sentinel-3 SLSTR |
+| `VITE_SENTINEL_INSTANCE_ID_S3` | opzionale | Instance ID della Configuration Sentinel Hub per un layer Sentinel-3 SLSTR (brightness temperature) |
+| `VITE_SENTINEL_INSTANCE_ID_S3_LST` | opzionale | Instance ID della Configuration Sentinel Hub per un layer Sentinel-3 SLSTR L2 (Land Surface Temperature vera, prodotto `SL_2_LST`) |
+| `VITE_SENTINEL_INSTANCE_ID_LANDSAT` | opzionale | Instance ID della Configuration Sentinel Hub per un layer Landsat 8-9 (banda termica 30-100m) |
 
 Se nessuna di queste è impostata, l'app funziona comunque a pieno — gli overlay satellitari ricadono su NASA GIBS.
 
@@ -57,6 +59,9 @@ Se nessuna di queste è impostata, l'app funziona comunque a pieno — gli overl
 2. Dashboard → **Sentinel Hub** → **OAuth Clients** → crea un client → copia client ID e secret in `.env.local`.
 3. Dashboard → **Sentinel Hub** → **Configuration Utility** → **New configuration**, una volta dal template **Sentinel-2 L2A** e una dal template **Sentinel-3 SLSTR**. Copia ogni **Instance ID** in `.env.local`.
 4. Apri la tab **Layers** di ciascuna configuration per confermare gli ID dei layer — questo progetto si aspetta `TRUE_COLOR` e `VEGETATION_INDEX` (Sentinel-2) e `F1_VISUALIZED` (Sentinel-3, brightness temperature — il template di default di SLSTR non ha un prodotto LST dedicato). Se la tua configuration usa nomi diversi, aggiorna `src/utils/satellite-layers.ts`.
+5. Facoltativo, per dati termici migliori: crea altre due configuration, una dal template **Sentinel-3 SLSTR L2** (layer `LST` — un vero prodotto Land Surface Temperature, `SL_2_LST`, non solo brightness temperature) e una da un template **Landsat 8-9** (layer `9_THERMAL`, risoluzione ~30-100m — molto più fine dell'~1km di Sentinel-3, al costo di un rivisita di ~8-16 giorni invece che quasi giornaliera). Entrambe verificate con la Process API di Sentinel Hub prima di collegarle; se gli ID dei layer della tua configuration sono diversi, controlla `src/utils/satellite-layers.ts`.
+
+   **Limite noto (solo Landsat, non risolto):** anche con mosaicking `leastCC` e una finestra di 45 giorni, il layer termico Landsat può tornare vuoto (nessun pixel valido, non un errore) se ogni passaggio recente sull'area era nuvoloso — il revisit combinato Landsat 8+9 è molto più rado del quasi-giornaliero di Sentinel-2/3. Confermato che non è un artefatto di cache (bbox nuove, mai richieste prima, danno lo stesso buco). Trattalo come best-effort; l'interfaccia mostra un avviso quando questo layer è selezionato.
 
 Nota: le richieste WMS verso una Configuration pubblica non richiedono il token OAuth — ma l'Instance ID stesso consuma comunque la quota di processing units del tuo account se condiviso o "scrapato", quindi trattalo come un secret a bassa sensibilità (non committarlo mai).
 

@@ -28,7 +28,7 @@ export default function SatelliteOverlay({ layer, date }: SatelliteOverlayProps)
   if (layer === "none") return null;
 
   if (layer in SENTINEL_LAYERS) {
-    const { instance, name, minZoom } = SENTINEL_LAYERS[layer as keyof typeof SENTINEL_LAYERS];
+    const { instance, name, minZoom, lookbackDays } = SENTINEL_LAYERS[layer as keyof typeof SENTINEL_LAYERS];
     if (!instance) return null;
 
     return (
@@ -40,7 +40,7 @@ export default function SatelliteOverlay({ layer, date }: SatelliteOverlayProps)
         transparent
         opacity={0.7}
         minZoom={minZoom}
-        params={{ time: sentinelTimeRange(date) } as SentinelWMSParams}
+        params={{ time: sentinelTimeRange(date, lookbackDays) } as SentinelWMSParams}
         attribution="Copernicus Sentinel Hub / CDSE"
       />
     );

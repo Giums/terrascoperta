@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { simulateMitigation } from "../../utils/simulator";
+import { peakSurfaceTemps } from "../../utils/dissipation-model";
 
 interface SimulatorProps {
   uhi: number;
@@ -12,6 +13,7 @@ export default function Simulator({ uhi, onChange }: SimulatorProps) {
 
   const reduction = simulateMitigation(uhi, green, albedo);
   const projected = Math.max(uhi - reduction, uhi * 0.05);
+  const surface = peakSurfaceTemps(green, albedo);
 
   function handleGreen(value: number) {
     setGreen(value);
@@ -66,8 +68,29 @@ export default function Simulator({ uhi, onChange }: SimulatorProps) {
       </div>
       <p className="simulator__note">
         Riduzione stimata: −{reduction.toFixed(1)}°C. Modello basato su Bowler et al. 2010
-        (verde) e Akbari et al. 2001 (albedo) — non una previsione per la città specifica.
+        (verde) e Akbari et al. 2001 (albedo) — non una previsione per la città specifica. Il
+        segnale è piccolo perché è la temperatura media dell'aria su tutta la città: non è
+        l'effetto che senti tu, è quello che sente il termometro dell'aeroporto.
       </p>
+      <div className="simulator__gratification">
+        <p className="simulator__gratification-label">Quello che senti davvero, sul tuo tetto:</p>
+        <div className="simulator__result">
+          <div>
+            <span className="simulator__label">Tetto scuro, ore 14</span>
+            <span className="simulator__value simulator__value--hot">{surface.baseline.toFixed(0)}°C</span>
+          </div>
+          <div className="simulator__arrow">→</div>
+          <div>
+            <span className="simulator__label">Con questi interventi</span>
+            <span className="simulator__value simulator__value--good">{surface.mitigated.toFixed(0)}°C</span>
+          </div>
+        </div>
+        <p className="simulator__note">
+          Un tetto/terrazzo scuro d'estate scotta letteralmente al tatto — questo è il calore che
+          entra in casa tua e che il condizionatore deve combattere. Vernice bianca o verde lo
+          abbattono di decine di gradi, da subito, sul tuo edificio.
+        </p>
+      </div>
     </div>
   );
 }
