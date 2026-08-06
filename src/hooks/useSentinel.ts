@@ -10,7 +10,7 @@ interface SentinelToken {
  * Richiede un access token Sentinel Hub tramite la Edge Function
  * /api/sentinel-token — il client_secret non tocca mai il browser.
  * Se il deployment non ha credenziali configurate, `available` resta false
- * e l'app deve ricadere sui layer pubblici NASA GIBS.
+ * e gli overlay satellitari non renderizzano.
  */
 export function useSentinelToken(): SentinelToken {
   const [accessToken, setAccessToken] = useState<string | null>(null);
@@ -28,8 +28,7 @@ export function useSentinelToken(): SentinelToken {
         setAvailable(true);
       })
       .catch(() => {
-        // Nessuna Edge Function disponibile (es. dev locale senza `vercel dev`)
-        // → si ricade silenziosamente su NASA GIBS.
+        // Nessuna Edge Function disponibile (es. dev locale senza `vercel dev`).
       })
       .finally(() => {
         if (!cancelled) setLoading(false);

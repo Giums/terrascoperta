@@ -2,12 +2,12 @@
 
 **[🇮🇹 Leggi in italiano](README.it.md)**
 
-An interactive, educational website mapping urban heat islands (UHI) across Italian cities, combining real satellite data (Copernicus Sentinel, NASA GIBS) with live weather (Open-Meteo). The goal is not just to show the problem, but to make it actionable: what a city can do, and — just as importantly — what a single household can do about it.
+An interactive, educational website mapping urban heat islands (UHI) across Italian cities, combining real satellite data (Copernicus Sentinel) with live weather (Open-Meteo). The goal is not just to show the problem, but to make it actionable: what a city can do, and — just as importantly — what a single household can do about it.
 
 ## Features
 
 - **Interactive map** of Italian provincial capitals and cities >50k inhabitants, with an estimated UHI intensity per city (color-coded markers).
-- **Satellite overlays**: true-color and NDVI imagery from Sentinel-2 (10m resolution) and land-surface temperature from Sentinel-3 (via Copernicus Data Space Ecosystem / Sentinel Hub), with automatic fallback to NASA GIBS/MODIS (no auth required, ~1km resolution) when Sentinel Hub isn't configured.
+- **Satellite overlays**: true-color, NDVI, NDWI, SWIR and NBR imagery from Sentinel-2 (10m resolution) and land-surface temperature from Sentinel-3 (via Copernicus Data Space Ecosystem / Sentinel Hub). Requires Sentinel Hub credentials — see below.
 - **Live weather** per city (temperature, humidity, wind, solar radiation) from Open-Meteo.
 - **Mitigation simulator**: sliders for green-cover increase and high-albedo surfaces, estimating the temperature reduction based on published research (Bowler et al. 2010, Akbari et al. 2001).
 - **Cost & savings estimator**: rough order-of-magnitude cost of interventions, AC energy savings, CO₂ reduction, and payback period.
@@ -20,7 +20,7 @@ All estimates are clearly labeled as models, not measurements — see [Methodolo
 
 - **Frontend:** React 19 + TypeScript + Vite, no backend framework
 - **Map:** Leaflet / react-leaflet, CARTO Dark tiles
-- **Satellite data:** Copernicus Data Space Ecosystem (Sentinel Hub WMS) with NASA GIBS WMTS/WMS as a no-auth fallback
+- **Satellite data:** Copernicus Data Space Ecosystem (Sentinel Hub WMS)
 - **Weather data:** Open-Meteo (no API key, CORS-enabled)
 - **Serverless:** one Vercel Edge Function (`api/sentinel-token.ts`) for OAuth2 token exchange — kept for future features that need the authenticated Sentinel Hub Process API; the current map overlays use public WMS requests and don't need it
 - **Linting:** oxlint
@@ -51,7 +51,8 @@ Set these in `.env.local` (never committed — see [Security](#security)):
 | `VITE_SENTINEL_INSTANCE_ID_S3_LST` | optional | Sentinel Hub Configuration Instance ID for a Sentinel-3 SLSTR L2 layer (real Land Surface Temperature, `SL_2_LST` product) |
 | `VITE_SENTINEL_INSTANCE_ID_LANDSAT` | optional | Sentinel Hub Configuration Instance ID for a Landsat 8-9 layer (30-100m thermal band) |
 
-If none of these are set, the app still works fully — satellite overlays fall back to NASA GIBS.
+If none of these are set, the app still works — city markers, weather, the simulator and cost
+estimator don't need Sentinel Hub — but satellite overlays won't render.
 
 ### Setting up Sentinel Hub (optional, for higher-resolution imagery)
 

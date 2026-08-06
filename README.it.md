@@ -2,12 +2,12 @@
 
 **[🇬🇧 Read in English](README.md)**
 
-Un sito web interattivo ed educativo che mostra le isole di calore urbane (Urban Heat Islands, UHI) nelle città italiane, combinando dati satellitari reali (Copernicus Sentinel, NASA GIBS) con dati meteo live (Open-Meteo). L'obiettivo non è solo mostrare il problema, ma renderlo azionabile: cosa può fare una città, e — altrettanto importante — cosa può fare un singolo cittadino a casa propria.
+Un sito web interattivo ed educativo che mostra le isole di calore urbane (Urban Heat Islands, UHI) nelle città italiane, combinando dati satellitari reali (Copernicus Sentinel) con dati meteo live (Open-Meteo). L'obiettivo non è solo mostrare il problema, ma renderlo azionabile: cosa può fare una città, e — altrettanto importante — cosa può fare un singolo cittadino a casa propria.
 
 ## Funzionalità
 
 - **Mappa interattiva** dei capoluoghi di provincia italiani e delle città con più di 50k abitanti, con un'intensità UHI stimata per città (marker colorati).
-- **Overlay satellitari**: immagini vero-colore e NDVI da Sentinel-2 (risoluzione 10m) e temperatura superficiale da Sentinel-3 (via Copernicus Data Space Ecosystem / Sentinel Hub), con fallback automatico a NASA GIBS/MODIS (nessuna autenticazione richiesta, ~1km di risoluzione) quando Sentinel Hub non è configurato.
+- **Overlay satellitari**: immagini vero-colore, NDVI, NDWI, SWIR e NBR da Sentinel-2 (risoluzione 10m) e temperatura superficiale da Sentinel-3 (via Copernicus Data Space Ecosystem / Sentinel Hub). Richiede credenziali Sentinel Hub — vedi sotto.
 - **Meteo live** per città (temperatura, umidità, vento, radiazione solare) da Open-Meteo.
 - **Simulatore di mitigazione**: slider per aumento del verde e superfici ad alto albedo, con stima della riduzione di temperatura basata su ricerca pubblicata (Bowler et al. 2010, Akbari et al. 2001).
 - **Stimatore di costi e risparmi**: ordine di grandezza dei costi degli interventi, risparmio energetico sul condizionamento, riduzione di CO₂ e tempo di ritorno dell'investimento.
@@ -20,7 +20,7 @@ Tutte le stime sono dichiarate esplicitamente come modelli, non misurazioni — 
 
 - **Frontend:** React 19 + TypeScript + Vite, nessun framework backend
 - **Mappa:** Leaflet / react-leaflet, tile CARTO Dark
-- **Dati satellitari:** Copernicus Data Space Ecosystem (Sentinel Hub WMS) con NASA GIBS WMTS/WMS come fallback senza autenticazione
+- **Dati satellitari:** Copernicus Data Space Ecosystem (Sentinel Hub WMS)
 - **Dati meteo:** Open-Meteo (nessuna API key, CORS abilitato)
 - **Serverless:** una Vercel Edge Function (`api/sentinel-token.ts`) per lo scambio del token OAuth2 — mantenuta per future funzionalità che richiedano la Process API autenticata di Sentinel Hub; gli overlay della mappa attuali usano richieste WMS pubbliche e non ne hanno bisogno
 - **Linting:** oxlint
@@ -51,7 +51,8 @@ Da impostare in `.env.local` (mai committato — vedi [Sicurezza](#sicurezza)):
 | `VITE_SENTINEL_INSTANCE_ID_S3_LST` | opzionale | Instance ID della Configuration Sentinel Hub per un layer Sentinel-3 SLSTR L2 (Land Surface Temperature vera, prodotto `SL_2_LST`) |
 | `VITE_SENTINEL_INSTANCE_ID_LANDSAT` | opzionale | Instance ID della Configuration Sentinel Hub per un layer Landsat 8-9 (banda termica 30-100m) |
 
-Se nessuna di queste è impostata, l'app funziona comunque a pieno — gli overlay satellitari ricadono su NASA GIBS.
+Se nessuna di queste è impostata, l'app funziona comunque — marker città, meteo, simulatore e
+stimatore costi non richiedono Sentinel Hub — ma gli overlay satellitari non verranno mostrati.
 
 ### Configurare Sentinel Hub (opzionale, per immagini a risoluzione maggiore)
 

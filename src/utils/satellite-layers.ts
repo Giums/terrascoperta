@@ -4,19 +4,11 @@ export type SatelliteLayerId =
   | "none"
   | "s2-true-color"
   | "s2-ndvi"
+  | "s2-ndwi"
+  | "s2-swir"
+  | "s2-nbr"
   | "s3-lst"
-  | "landsat-thermal"
-  | "gibs-lst-day"
-  | "gibs-lst-night"
-  | "gibs-ndvi";
-
-export const GIBS_WMS_URL = "https://gibs.earthdata.nasa.gov/wms/epsg3857/best/wms.cgi";
-
-export const GIBS_LAYER_NAMES: Record<"gibs-lst-day" | "gibs-lst-night" | "gibs-ndvi", string> = {
-  "gibs-lst-day": "MODIS_Terra_Land_Surface_Temp_Day",
-  "gibs-lst-night": "MODIS_Terra_Land_Surface_Temp_Night",
-  "gibs-ndvi": "MODIS_Terra_NDVI_8Day",
-};
+  | "landsat-thermal";
 
 const SENTINEL_INSTANCE_S2 = import.meta.env.VITE_SENTINEL_INSTANCE_ID_S2 as string | undefined;
 const SENTINEL_INSTANCE_S3 = import.meta.env.VITE_SENTINEL_INSTANCE_ID_S3 as string | undefined;
@@ -29,13 +21,24 @@ export const sentinelHubAvailable = Boolean(
 );
 
 export const SENTINEL_LAYERS: Record<
-  "s2-true-color" | "s2-ndvi" | "s3-lst" | "landsat-thermal",
+  "s2-true-color" | "s2-ndvi" | "s2-ndwi" | "s2-swir" | "s2-nbr" | "s3-lst" | "landsat-thermal",
   { instance?: string; name: string; minZoom?: number; lookbackDays: number }
 > = {
   // La collection S2L2A rifiuta richieste WMS oltre 1500 m/pixel: sotto zoom 7
   // (vista Italia intera, ~1700-1900 m/pixel) il tile torna un'immagine di errore.
   "s2-true-color": { instance: SENTINEL_INSTANCE_S2, name: "TRUE_COLOR", minZoom: 7, lookbackDays: 13 },
   "s2-ndvi": { instance: SENTINEL_INSTANCE_S2, name: "VEGETATION_INDEX", minZoom: 7, lookbackDays: 13 },
+  // NDWI (Normalized Difference Water Index, McFeeters 1996) — richiede un layer
+  // "WATER_INDEX" nella stessa Configuration S2L2A (Configuration Utility →
+  // Custom → evalscript NDWI, o template "NDWI" se disponibile).
+  "s2-ndwi": { instance: SENTINEL_INSTANCE_S2, name: "WATER_INDEX", minZoom: 7, lookbackDays: 13 },
+  // Falso colore SWIR — evidenzia calore/colate laviche attive, satura in
+  // bianco dove la temperatura di superficie è molto alta.
+  "s2-swir": { instance: SENTINEL_INSTANCE_S2, name: "SWIR", minZoom: 7, lookbackDays: 13 },
+  // NBR (Normalized Burn Ratio) — evidenzia cicatrici da incendio (suolo bruciato
+  // assorbe più SWIR, riflette meno NIR). Richiede layer "BURN_INDEX" nella
+  // stessa Configuration S2L2A.
+  "s2-nbr": { instance: SENTINEL_INSTANCE_S2, name: "BURN_INDEX", minZoom: 7, lookbackDays: 13 },
   // Land Surface Temperature vera (Sentinel-3 SLSTR L2, prodotto SL_2_LST) — non
   // una brightness temperature grezza. Limite di risoluzione 5000 m/pixel: già
   // rispettato dallo zoom minimo globale della mappa (5), nessun minZoom dedicato.
@@ -54,10 +57,7 @@ export const SENTINEL_LAYERS: Record<
 
 /** Zoom minimo richiesto perché il layer selezionato mostri dati (undefined = nessun limite). */
 export function layerMinZoom(layer: SatelliteLayerId): number | undefined {
-  if (layer in SENTINEL_LAYERS) {
-    return SENTINEL_LAYERS[layer as keyof typeof SENTINEL_LAYERS].minZoom;
-  }
-  return undefined;
+  return layer === "none" ? undefined : SENTINEL_LAYERS[layer].minZoom;
 }
 
 export function sentinelTimeRange(date: string, lookbackDays: number): string {

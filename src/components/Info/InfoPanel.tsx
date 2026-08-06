@@ -49,9 +49,9 @@ export default function InfoPanel({ onClose }: InfoPanelProps) {
         <p>
           I valori di UHI mostrati sulla mappa sono <strong>stime modellistiche</strong>, non
           misurazioni dirette, calcolate da popolazione, latitudine, prossimità alla costa e
-          posizione in Pianura Padana. I layer satellitari (NASA GIBS / MODIS) mostrano la
-          temperatura di superficie reale ma a risoluzione ~1 km e con ~2 giorni di latenza. Costi
-          e risparmi sono ordini di grandezza a scala urbana, non preventivi.
+          posizione in Pianura Padana. I layer satellitari (Copernicus Sentinel Hub) mostrano la
+          temperatura di superficie reale, con ~2 giorni di latenza. Costi e risparmi sono ordini
+          di grandezza a scala urbana, non preventivi.
         </p>
       </section>
 

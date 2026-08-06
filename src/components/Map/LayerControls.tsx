@@ -11,14 +11,11 @@ interface LayerControlsProps {
 const SENTINEL_OPTIONS: { id: SatelliteLayerId; label: string }[] = [
   { id: "s2-true-color", label: "Vero colore (Sentinel-2, 10m)" },
   { id: "s2-ndvi", label: "Vegetazione — NDVI (Sentinel-2, 10m)" },
+  { id: "s2-ndwi", label: "Presenza d'acqua — NDWI (Sentinel-2, 10m)" },
+  { id: "s2-swir", label: "Calore/colate laviche — SWIR (Sentinel-2, 10m)" },
+  { id: "s2-nbr", label: "Cicatrici da incendio — NBR (Sentinel-2, 10m)" },
   { id: "s3-lst", label: "Temperatura superficie reale — LST (Sentinel-3, ~1km)" },
   { id: "landsat-thermal", label: "Temperatura superficie (Landsat, ~30-100m) — copertura non garantita" },
-];
-
-const GIBS_OPTIONS: { id: SatelliteLayerId; label: string }[] = [
-  { id: "gibs-lst-day", label: "Temperatura superficie — giorno" },
-  { id: "gibs-lst-night", label: "Temperatura superficie — notte" },
-  { id: "gibs-ndvi", label: "Vegetazione (NDVI)" },
 ];
 
 function todayMinus(days: number): string {
@@ -41,22 +38,12 @@ export default function LayerControls({ layer, onLayerChange, date, onDateChange
         onChange={(e) => onLayerChange(e.target.value as SatelliteLayerId)}
       >
         <option value="none">Solo mappa base</option>
-        {sentinelHubAvailable && (
-          <optgroup label="Copernicus Sentinel Hub">
-            {SENTINEL_OPTIONS.map((opt) => (
-              <option key={opt.id} value={opt.id}>
-                {opt.label}
-              </option>
-            ))}
-          </optgroup>
-        )}
-        <optgroup label="NASA GIBS / MODIS (backup, no auth)">
-          {GIBS_OPTIONS.map((opt) => (
+        {sentinelHubAvailable &&
+          SENTINEL_OPTIONS.map((opt) => (
             <option key={opt.id} value={opt.id}>
               {opt.label}
             </option>
           ))}
-        </optgroup>
       </select>
       {layer !== "none" && (
         <>

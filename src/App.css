@@ -43,3 +43,30 @@
 .app-info-button:focus {
   background: rgba(56, 189, 248, 0.2);
 }
+
+.module-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.module-tabs button {
+  padding: 0.45rem 0.8rem;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: transparent;
+  color: #94a3b8;
+  font-size: 0.85rem;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.module-tabs button:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.module-tabs button.module-tabs__active {
+  background: rgba(56, 189, 248, 0.15);
+  border-color: rgba(56, 189, 248, 0.4);
+  color: #38bdf8;
+}
