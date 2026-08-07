@@ -7,8 +7,8 @@ interface SentinelToken {
 }
 
 /**
- * Richiede un access token Sentinel Hub tramite la Edge Function
- * /api/sentinel-token — il client_secret non tocca mai il browser.
+ * Richiede un access token Sentinel Hub tramite il backend (server/index.ts,
+ * route /api/sentinel-token) — il client_secret non tocca mai il browser.
  * Se il deployment non ha credenziali configurate, `available` resta false
  * e gli overlay satellitari non renderizzano.
  */
@@ -28,7 +28,8 @@ export function useSentinelToken(): SentinelToken {
         setAvailable(true);
       })
       .catch(() => {
-        // Nessuna Edge Function disponibile (es. dev locale senza `vercel dev`).
+        // Backend non raggiungibile (es. dev locale con solo `npm run dev`,
+        // senza `npm run server` o senza Nginx a fare da reverse proxy).
       })
       .finally(() => {
         if (!cancelled) setLoading(false);

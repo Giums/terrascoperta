@@ -41,6 +41,16 @@ export default function FireDetail({ fire, onClose }: FireDetailProps) {
       </section>
 
       <section className="info-panel__section">
+        <h3>Canadair in volo ora</h3>
+        <p>
+          Le icone ✈️ sulla mappa sono i Canadair CL-415 della flotta antincendio della Protezione
+          Civile, posizione reale via transponder (dati OpenSky Network, aggiornati ogni minuto). Solo
+          13 dei 19 velivoli della flotta sono tracciabili con questo metodo; se non vedi nessun aereo,
+          probabilmente sono tutti a terra in base.
+        </p>
+      </section>
+
+      <section className="info-panel__section">
         <h3>Il trend, non la previsione</h3>
         <p>
           Qui non si prevede dove brucerà: si mostra dove ha già bruciato, e sempre più spesso. I dati

@@ -5,6 +5,7 @@ import CityMarkers from "./components/Map/CityMarkers";
 import WaterBodyMarkers from "./components/Map/WaterBodyMarkers";
 import VolcanoMarkers from "./components/Map/VolcanoMarkers";
 import FireMarkers from "./components/Map/FireMarkers";
+import CanadairMarkers from "./components/Map/CanadairMarkers";
 import DesertificationMarkers from "./components/Map/DesertificationMarkers";
 import HydroRiskMarkers from "./components/Map/HydroRiskMarkers";
 import AddressMarker from "./components/Map/AddressMarker";
@@ -35,6 +36,7 @@ import { hydroRiskCases } from "./data/hydro-risk";
 import type { HydroRiskCase } from "./data/hydro-risk";
 import { sentinelHubAvailable } from "./utils/satellite-layers";
 import type { AddressResult } from "./utils/geocode";
+import { useCanadairPositions } from "./hooks/useCanadairPositions";
 import "./App.css";
 
 type Module = "calore" | "acqua" | "vulcani" | "incendi" | "desertificazione" | "idrogeologico";
@@ -106,6 +108,7 @@ function App() {
   const [selectedZone, setSelectedZone] = useState<DesertificationZone | null>(null);
   const [selectedHydroCase, setSelectedHydroCase] = useState<HydroRiskCase | null>(null);
   const [flyTarget, setFlyTarget] = useState<FlyTarget | null>(null);
+  const { aircraft: canadairAircraft } = useCanadairPositions();
   const [showInfo, setShowInfo] = useState(false);
   // Di default mostriamo subito la temperatura di superficie reale (Sentinel-3
   // LST): il calore va visto, non scoperto in un menu.
@@ -239,7 +242,12 @@ function App() {
             {module === "calore" && <CityMarkers cities={cities} onSelect={selectCity} />}
             {module === "acqua" && <WaterBodyMarkers waterBodies={waterBodies} onSelect={selectWaterBody} />}
             {module === "vulcani" && <VolcanoMarkers volcanoes={volcanoes} onSelect={selectVolcano} />}
-            {module === "incendi" && <FireMarkers fires={fires} onSelect={selectFire} />}
+            {module === "incendi" && (
+              <>
+                <FireMarkers fires={fires} onSelect={selectFire} />
+                <CanadairMarkers aircraft={canadairAircraft} />
+              </>
+            )}
             {module === "desertificazione" && (
               <DesertificationMarkers zones={desertificationZones} onSelect={selectZone} />
             )}
