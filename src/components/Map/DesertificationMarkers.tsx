@@ -1,4 +1,4 @@
-import { CircleMarker, Tooltip } from "react-leaflet";
+import DotMarker from "./DotMarker";
 import type { DesertificationZone } from "../../data/desertification-zones";
 
 interface DesertificationMarkersProps {
@@ -10,19 +10,22 @@ export default function DesertificationMarkers({ zones, onSelect }: Desertificat
   return (
     <>
       {zones.map((z) => (
-        <CircleMarker
+        <DotMarker
           key={z.name}
-          center={[z.lat, z.lng]}
-          radius={10}
-          pathOptions={{ color: "#d97706", fillColor: "#d97706", fillOpacity: 0.5, weight: 1.5 }}
-          eventHandlers={{ click: () => onSelect(z) }}
-        >
-          <Tooltip direction="top" offset={[0, -8]}>
-            <strong>{z.name}</strong>
-            <br />
-            {z.region}
-          </Tooltip>
-        </CircleMarker>
+          lat={z.lat}
+          lng={z.lng}
+          size={20}
+          color="#d97706"
+          fillOpacity={0.5}
+          onClick={() => onSelect(z)}
+          tooltip={
+            <>
+              <strong>{z.name}</strong>
+              <br />
+              {z.region}
+            </>
+          }
+        />
       ))}
     </>
   );

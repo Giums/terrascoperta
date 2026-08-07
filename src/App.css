@@ -29,44 +29,51 @@
 }
 
 .app-info-button {
-  padding: 0.55rem 1rem;
-  border-radius: 8px;
-  border: 1px solid rgba(56, 189, 248, 0.4);
-  background: rgba(56, 189, 248, 0.1);
+  padding: 0.55rem 1.1rem;
+  border-radius: 999px;
+  border: 1px solid var(--glass-border);
+  background: rgba(56, 189, 248, 0.14);
   color: #38bdf8;
   font-size: 0.85rem;
   cursor: pointer;
   white-space: nowrap;
+  transition: background 0.15s ease;
 }
 
 .app-info-button:hover,
 .app-info-button:focus {
-  background: rgba(56, 189, 248, 0.2);
+  background: rgba(56, 189, 248, 0.24);
 }
 
 .module-tabs {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.4rem;
+  gap: 2px;
+  padding: 3px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-md);
 }
 
 .module-tabs button {
-  padding: 0.45rem 0.8rem;
-  border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 0.4rem 0.75rem;
+  border-radius: calc(var(--radius-md) - 3px);
+  border: none;
   background: transparent;
   color: #94a3b8;
-  font-size: 0.85rem;
+  font-size: 0.82rem;
   cursor: pointer;
   white-space: nowrap;
+  transition: background 0.15s ease, color 0.15s ease;
 }
 
 .module-tabs button:hover {
-  background: rgba(255, 255, 255, 0.06);
+  color: #e2e8f0;
 }
 
 .module-tabs button.module-tabs__active {
-  background: rgba(56, 189, 248, 0.15);
-  border-color: rgba(56, 189, 248, 0.4);
-  color: #38bdf8;
+  background: rgba(56, 189, 248, 0.9);
+  color: #04141c;
+  font-weight: 600;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
 }

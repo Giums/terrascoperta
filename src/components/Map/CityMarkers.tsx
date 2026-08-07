@@ -1,4 +1,4 @@
-import { CircleMarker, Tooltip } from "react-leaflet";
+import DotMarker from "./DotMarker";
 import type { City } from "../../data/cities";
 import { estimateUHI, uhiColor } from "../../utils/uhi-model";
 
@@ -14,24 +14,21 @@ export default function CityMarkers({ cities, onSelect }: CityMarkersProps) {
         const uhi = estimateUHI(city);
         const radius = 5 + Math.log10(Math.max(city.population, 1000)) * 1.5;
         return (
-          <CircleMarker
+          <DotMarker
             key={`${city.province}-${city.name}`}
-            center={[city.lat, city.lng]}
-            radius={radius}
-            pathOptions={{
-              color: uhiColor(uhi),
-              fillColor: uhiColor(uhi),
-              fillOpacity: 0.65,
-              weight: 1.5,
-            }}
-            eventHandlers={{ click: () => onSelect(city) }}
-          >
-            <Tooltip direction="top" offset={[0, -radius]}>
-              <strong>{city.name}</strong>
-              <br />
-              UHI stimata: +{uhi.toFixed(1)}°C
-            </Tooltip>
-          </CircleMarker>
+            lat={city.lat}
+            lng={city.lng}
+            size={radius * 2}
+            color={uhiColor(uhi)}
+            onClick={() => onSelect(city)}
+            tooltip={
+              <>
+                <strong>{city.name}</strong>
+                <br />
+                UHI stimata: +{uhi.toFixed(1)}°C
+              </>
+            }
+          />
         );
       })}
     </>

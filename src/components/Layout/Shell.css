@@ -15,8 +15,8 @@
   gap: 1rem;
   flex-wrap: wrap;
   padding: 0.75rem 1.25rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(12, 16, 22, 0.95);
+  border-bottom: 1px solid var(--glass-border);
+  background: var(--glass-bg-strong);
   z-index: 1100;
 }
 
@@ -40,8 +40,9 @@
   max-width: 75vw;
   overflow: auto;
   resize: horizontal;
-  background: rgba(12, 16, 22, 0.98);
-  border-left: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--glass-bg-strong);
+  border-left: 1px solid var(--glass-border);
+  box-shadow: var(--shadow-float);
 }
 
 @media (max-width: 768px) {

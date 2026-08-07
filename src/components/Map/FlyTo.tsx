@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { useMap } from "react-leaflet";
+import { useMap } from "react-map-gl/maplibre";
 
 export interface FlyTarget {
   lat: number;
@@ -21,11 +21,11 @@ interface FlyToProps {
  * quota e produce tile abbandonate a metà caricamento.
  */
 export default function FlyTo({ target, onArrive }: FlyToProps) {
-  const map = useMap();
+  const { current: map } = useMap();
 
   useEffect(() => {
-    if (!target) return;
-    map.flyTo([target.lat, target.lng], target.zoom ?? 17, { duration: 1.2 });
+    if (!target || !map) return;
+    map.flyTo({ center: [target.lng, target.lat], zoom: target.zoom ?? 17, duration: 1200 });
 
     if (!onArrive) return;
     map.once("moveend", onArrive);

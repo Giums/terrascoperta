@@ -1,9 +1,8 @@
-import { WMSTileLayer } from "react-leaflet";
+import { Source, Layer } from "react-map-gl/maplibre";
 import {
   SENTINEL_LAYERS,
   sentinelTimeRange,
   type SatelliteLayerId,
-  type SentinelWMSParams,
 } from "../../utils/satellite-layers";
 
 export type { SatelliteLayerId } from "../../utils/satellite-layers";
@@ -19,6 +18,9 @@ interface SatelliteOverlayProps {
  * pubblica non richiedono token; l'Instance ID stesso non va però mai
  * committato (consuma la quota dell'account). Se la Configuration non è
  * presente in `.env.local`, il layer non renderizza nulla.
+ * `{bbox-epsg-3857}` è sostituito da MapLibre con il bbox del tile richiesto —
+ * è così che si collega un servizio WMS (pensato per bbox arbitrari) a un
+ * source raster XYZ (pensato per tile fissi).
  */
 export default function SatelliteOverlay({ layer, date }: SatelliteOverlayProps) {
   if (layer === "none") return null;
@@ -26,17 +28,22 @@ export default function SatelliteOverlay({ layer, date }: SatelliteOverlayProps)
   const { instance, name, minZoom, lookbackDays } = SENTINEL_LAYERS[layer];
   if (!instance) return null;
 
+  const time = sentinelTimeRange(date, lookbackDays);
+  const tileUrl =
+    `https://sh.dataspace.copernicus.eu/ogc/wms/${instance}` +
+    `?SERVICE=WMS&REQUEST=GetMap&VERSION=1.3.0&LAYERS=${encodeURIComponent(name)}` +
+    `&STYLES=&FORMAT=image/png&TRANSPARENT=true&CRS=EPSG:3857` +
+    `&WIDTH=256&HEIGHT=256&BBOX={bbox-epsg-3857}&time=${encodeURIComponent(time)}`;
+
   return (
-    <WMSTileLayer
-      key={`${layer}-${date}`}
-      url={`https://sh.dataspace.copernicus.eu/ogc/wms/${instance}`}
-      layers={name}
-      format="image/png"
-      transparent
-      opacity={0.7}
-      minZoom={minZoom}
-      params={{ time: sentinelTimeRange(date, lookbackDays) } as SentinelWMSParams}
-      attribution="Copernicus Sentinel Hub / CDSE"
-    />
+    <Source key={`${layer}-${date}`} id="satellite" type="raster" tiles={[tileUrl]} tileSize={256}>
+      <Layer
+        id="satellite-layer"
+        type="raster"
+        source="satellite"
+        {...(minZoom != null ? { minzoom: minZoom } : {})}
+        paint={{ "raster-opacity": 0.7 }}
+      />
+    </Source>
   );
 }

@@ -1,4 +1,4 @@
-import { CircleMarker, Tooltip } from "react-leaflet";
+import DotMarker from "./DotMarker";
 import type { Volcano } from "../../data/volcanoes";
 
 interface VolcanoMarkersProps {
@@ -10,19 +10,22 @@ export default function VolcanoMarkers({ volcanoes, onSelect }: VolcanoMarkersPr
   return (
     <>
       {volcanoes.map((v) => (
-        <CircleMarker
+        <DotMarker
           key={v.name}
-          center={[v.lat, v.lng]}
-          radius={9}
-          pathOptions={{ color: "#f97316", fillColor: "#f97316", fillOpacity: 0.65, weight: 1.5 }}
-          eventHandlers={{ click: () => onSelect(v) }}
-        >
-          <Tooltip direction="top" offset={[0, -8]}>
-            <strong>{v.name}</strong>
-            <br />
-            {v.type}
-          </Tooltip>
-        </CircleMarker>
+          lat={v.lat}
+          lng={v.lng}
+          size={18}
+          color="#f97316"
+          fillOpacity={0.65}
+          onClick={() => onSelect(v)}
+          tooltip={
+            <>
+              <strong>{v.name}</strong>
+              <br />
+              {v.type}
+            </>
+          }
+        />
       ))}
     </>
   );

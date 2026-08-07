@@ -1,4 +1,4 @@
-import { CircleMarker, Tooltip } from "react-leaflet";
+import DotMarker from "./DotMarker";
 import type { WaterBody } from "../../data/water-bodies";
 
 interface WaterBodyMarkersProps {
@@ -10,19 +10,22 @@ export default function WaterBodyMarkers({ waterBodies, onSelect }: WaterBodyMar
   return (
     <>
       {waterBodies.map((wb) => (
-        <CircleMarker
+        <DotMarker
           key={wb.name}
-          center={[wb.lat, wb.lng]}
-          radius={wb.type === "lago" ? 9 : 7}
-          pathOptions={{ color: "#38bdf8", fillColor: "#38bdf8", fillOpacity: 0.6, weight: 1.5 }}
-          eventHandlers={{ click: () => onSelect(wb) }}
-        >
-          <Tooltip direction="top" offset={[0, -8]}>
-            <strong>{wb.name}</strong>
-            <br />
-            {wb.type === "lago" ? "Lago" : "Fiume"}
-          </Tooltip>
-        </CircleMarker>
+          lat={wb.lat}
+          lng={wb.lng}
+          size={wb.type === "lago" ? 18 : 14}
+          color="#38bdf8"
+          fillOpacity={0.6}
+          onClick={() => onSelect(wb)}
+          tooltip={
+            <>
+              <strong>{wb.name}</strong>
+              <br />
+              {wb.type === "lago" ? "Lago" : "Fiume"}
+            </>
+          }
+        />
       ))}
     </>
   );

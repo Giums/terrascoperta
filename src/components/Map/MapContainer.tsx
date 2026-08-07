@@ -1,14 +1,31 @@
-import { MapContainer as LeafletMap, TileLayer } from "react-leaflet";
+import Map from "react-map-gl/maplibre";
+import type { StyleSpecification } from "maplibre-gl";
 import type { ReactNode } from "react";
-import "leaflet/dist/leaflet.css";
+import "maplibre-gl/dist/maplibre-gl.css";
 
-const ITALY_CENTER: [number, number] = [42.5, 12.5];
+const ITALY_CENTER = { longitude: 12.5, latitude: 42.5 };
 const ITALY_ZOOM = 6;
 
-const CARTO_DARK_URL =
-  "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png";
 const CARTO_ATTRIBUTION =
   '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>';
+
+const CARTO_DARK_STYLE: StyleSpecification = {
+  version: 8,
+  sources: {
+    carto: {
+      type: "raster",
+      tiles: [
+        "https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png",
+        "https://b.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png",
+        "https://c.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png",
+        "https://d.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png",
+      ],
+      tileSize: 256,
+      attribution: CARTO_ATTRIBUTION,
+    },
+  },
+  layers: [{ id: "carto-dark", type: "raster", source: "carto" }],
+};
 
 interface MapViewProps {
   children?: ReactNode;
@@ -16,16 +33,14 @@ interface MapViewProps {
 
 export default function MapView({ children }: MapViewProps) {
   return (
-    <LeafletMap
-      center={ITALY_CENTER}
-      zoom={ITALY_ZOOM}
+    <Map
+      initialViewState={{ ...ITALY_CENTER, zoom: ITALY_ZOOM }}
       minZoom={5}
       maxZoom={12}
-      style={{ height: "100%", width: "100%", background: "#0a0e14" }}
-      worldCopyJump
+      mapStyle={CARTO_DARK_STYLE}
+      style={{ width: "100%", height: "100%", background: "#0a0e14" }}
     >
-      <TileLayer url={CARTO_DARK_URL} attribution={CARTO_ATTRIBUTION} />
       {children}
-    </LeafletMap>
+    </Map>
   );
 }

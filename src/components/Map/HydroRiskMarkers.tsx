@@ -1,4 +1,4 @@
-import { CircleMarker, Tooltip } from "react-leaflet";
+import DotMarker from "./DotMarker";
 import type { HydroRiskCase } from "../../data/hydro-risk";
 
 interface HydroRiskMarkersProps {
@@ -10,17 +10,16 @@ export default function HydroRiskMarkers({ cases, onSelect }: HydroRiskMarkersPr
   return (
     <>
       {cases.map((c) => (
-        <CircleMarker
+        <DotMarker
           key={c.name}
-          center={[c.lat, c.lng]}
-          radius={9}
-          pathOptions={{ color: "#8b5cf6", fillColor: "#8b5cf6", fillOpacity: 0.6, weight: 1.5 }}
-          eventHandlers={{ click: () => onSelect(c) }}
-        >
-          <Tooltip direction="top" offset={[0, -8]}>
-            <strong>{c.name}</strong>
-          </Tooltip>
-        </CircleMarker>
+          lat={c.lat}
+          lng={c.lng}
+          size={18}
+          color="#8b5cf6"
+          fillOpacity={0.6}
+          onClick={() => onSelect(c)}
+          tooltip={<strong>{c.name}</strong>}
+        />
       ))}
     </>
   );

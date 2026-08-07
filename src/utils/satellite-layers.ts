@@ -1,5 +1,3 @@
-import type { WMSParams } from "leaflet";
-
 export type SatelliteLayerId =
   | "none"
   | "s2-true-color"
@@ -69,5 +67,3 @@ export function sentinelTimeRange(date: string, lookbackDays: number): string {
   start.setDate(start.getDate() - lookbackDays);
   return `${start.toISOString().slice(0, 10)}/${end.toISOString().slice(0, 10)}`;
 }
-
-export type SentinelWMSParams = WMSParams & { time: string };
