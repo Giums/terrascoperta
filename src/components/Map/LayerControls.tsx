@@ -71,7 +71,7 @@ function YearCompare({ year, onYearChange }: YearCompareProps) {
       />
       <div className="layer-controls__temp">
         {loading ? (
-          "Calcolo su 5 città… (~20s la prima volta)"
+          "Calcolo su 5 città…"
         ) : current != null ? (
           <>
             <strong>{current.toFixed(1)}°C</strong>
@@ -87,7 +87,7 @@ function YearCompare({ year, onYearChange }: YearCompareProps) {
           "Dato non disponibile"
         )}
       </div>
-      {!loading && <TrendSparkline data={data} selectedYear={year} />}
+      <TrendSparkline data={data} selectedYear={year} />
     </>
   );
 }

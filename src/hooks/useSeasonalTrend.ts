@@ -49,11 +49,12 @@ async function fetchPointYearAvg(point: GeoPoint, year: number, cutoff: string):
 
 /**
  * Media di una manciata di città sparse per l'Italia (Nord/Centro/Sud), non
- * di un punto solo — un singolo punto non rappresenta "l'Italia". Ogni
- * città in più moltiplica le richieste: con 5 città e 11 anni sono 55
- * richieste, tutte in SEQUENZA con una pausa — 5+ richieste simultanee a
- * Open-Meteo fanno scattare il rate limit (verificato, HTTP 429), quindi
- * niente Promise.all. Ci mette una ventina di secondi la prima volta.
+ * di un punto solo — un singolo punto non rappresenta "l'Italia". Le città
+ * di uno stesso anno vanno in PARALLELO (verificato: fino a 5 richieste
+ * simultanee non fanno scattare il rate limit di Open-Meteo, anche ripetuto
+ * per 11 anni di fila — 11 concorrenti invece lo fanno scattare, HTTP 429).
+ * Gli anni restano in sequenza tra loro, con una piccola pausa, per lo
+ * stesso motivo. ~5s la prima volta invece di ~20s.
  */
 export function useSeasonalTrend(points: GeoPoint[], minYear: number, maxYear: number): SeasonalTrendState {
   const [state, setState] = useState<SeasonalTrendState>({ data: [], loading: true });
@@ -69,19 +70,17 @@ export function useSeasonalTrend(points: GeoPoint[], minYear: number, maxYear: n
     (async () => {
       for (const year of years) {
         if (cancelled) return;
-        const cityAvgs: number[] = [];
-        for (const point of points) {
-          if (cancelled) return;
-          const v = await fetchPointYearAvg(point, year, cutoff).catch(() => null);
-          if (v != null) cityAvgs.push(v);
-          await sleep(120);
-        }
+        const cityAvgs = await Promise.all(
+          points.map((point) => fetchPointYearAvg(point, year, cutoff).catch(() => null)),
+        );
+        const valid = cityAvgs.filter((v): v is number => v != null);
         if (cancelled) return;
-        const avgTemp = cityAvgs.length ? cityAvgs.reduce((a, b) => a + b, 0) / cityAvgs.length : null;
+        const avgTemp = valid.length ? valid.reduce((a, b) => a + b, 0) / valid.length : null;
         setState((s) => ({
           data: s.data.map((d) => (d.year === year ? { year, avgTemp } : d)),
           loading: year !== years[years.length - 1],
         }));
+        await sleep(80);
       }
     })();
 
