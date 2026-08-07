@@ -1,0 +1,19 @@
+.trend-sparkline {
+  width: 100%;
+  height: 44px;
+  display: block;
+}
+
+.trend-sparkline__line {
+  fill: none;
+  stroke: #f87171;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.trend-sparkline__dot {
+  fill: #f87171;
+  stroke: #0f1420;
+  stroke-width: 1.5;
+}

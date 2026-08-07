@@ -52,6 +52,15 @@
   border-radius: var(--radius-md);
 }
 
+.info-panel__section--alert {
+  background: rgba(239, 68, 68, 0.08);
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
+.info-panel__section--alert h3 {
+  color: #f87171;
+}
+
 .info-panel__section h3 {
   font-size: 0.95rem;
   color: #f1f5f9;

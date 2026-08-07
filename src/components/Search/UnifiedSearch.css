@@ -1,30 +1,47 @@
-.city-search {
+.unified-search {
   position: relative;
+  display: flex;
   width: 100%;
   max-width: 320px;
 }
 
-.city-search input {
-  width: 100%;
+.unified-search input {
+  flex: 1;
+  min-width: 0;
   padding: 0.6rem 0.9rem;
-  border-radius: 8px;
+  border-radius: 8px 0 0 8px;
   border: 1px solid rgba(255, 255, 255, 0.15);
+  border-right: none;
   background: rgba(20, 24, 32, 0.9);
   color: #f1f5f9;
   font-size: 0.95rem;
 }
 
-.city-search input:focus {
+.unified-search input:focus {
   outline: 2px solid #38bdf8;
   outline-offset: 1px;
 }
 
-.city-search__results {
+.unified-search button[type="submit"] {
+  padding: 0 0.75rem;
+  border-radius: 0 8px 8px 0;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(56, 189, 248, 0.15);
+  color: #38bdf8;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.unified-search button[type="submit"]:hover {
+  background: rgba(56, 189, 248, 0.25);
+}
+
+.unified-search__results {
   position: absolute;
   top: calc(100% + 4px);
   left: 0;
   right: 0;
-  max-height: 280px;
+  max-height: 320px;
   overflow-y: auto;
   background: rgba(15, 18, 25, 0.98);
   border: 1px solid rgba(255, 255, 255, 0.12);
@@ -35,7 +52,7 @@
   z-index: 1000;
 }
 
-.city-search__results li button {
+.unified-search__results li button {
   width: 100%;
   display: flex;
   justify-content: space-between;
@@ -50,12 +67,20 @@
   text-align: left;
 }
 
-.city-search__results li button:hover,
-.city-search__results li button:focus {
+.unified-search__results li button:hover,
+.unified-search__results li button:focus {
   background: rgba(56, 189, 248, 0.15);
 }
 
-.city-search__region {
+.unified-search__tag {
   color: #94a3b8;
-  font-size: 0.8rem;
+  font-size: 0.75rem;
+  flex-shrink: 0;
+  align-self: center;
+}
+
+.unified-search__error {
+  padding: 0.5rem 0.6rem;
+  color: #fbbf24;
+  font-size: 0.85rem;
 }

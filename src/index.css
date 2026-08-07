@@ -55,3 +55,55 @@ p {
   background: rgba(255, 255, 255, 0.25);
   background-clip: padding-box;
 }
+
+/* Popup di MapLibre: di default sfondo bianco/testo grigio, illeggibili sul
+   tema scuro del sito. Il CSS di MapLibre (maplibre-gl.css) viene importato
+   da un componente e finisce DOPO questo file nel bundle: a parità di
+   specificità vincerebbe lui, quindi qui serve !important, non basta scrivere
+   la regola. */
+.maplibregl-popup-content {
+  background: #0f1420 !important;
+  color: #e2e8f0 !important;
+  border-radius: var(--radius-sm) !important;
+  padding: 0.6rem 0.8rem !important;
+  font-size: 0.8rem;
+  line-height: 1.4;
+  box-shadow: var(--shadow-float) !important;
+}
+
+.maplibregl-popup-anchor-bottom .maplibregl-popup-tip {
+  border-top-color: #0f1420 !important;
+}
+
+.maplibregl-popup-anchor-top .maplibregl-popup-tip {
+  border-bottom-color: #0f1420 !important;
+}
+
+.maplibregl-popup-anchor-left .maplibregl-popup-tip {
+  border-right-color: #0f1420 !important;
+}
+
+.maplibregl-popup-anchor-right .maplibregl-popup-tip {
+  border-left-color: #0f1420 !important;
+}
+
+.maplibregl-popup-close-button {
+  color: #94a3b8 !important;
+}
+
+.maplibregl-popup-close-button:hover {
+  color: #f1f5f9 !important;
+  background: transparent !important;
+}
+
+/* Anello pulsante per marker "attivi ora" (es. attività vulcanica rilevata) */
+@keyframes dot-marker-pulse {
+  0% {
+    transform: scale(1);
+    opacity: 0.7;
+  }
+  100% {
+    transform: scale(2.8);
+    opacity: 0;
+  }
+}

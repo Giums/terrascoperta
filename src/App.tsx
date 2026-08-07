@@ -6,14 +6,15 @@ import WaterBodyMarkers from "./components/Map/WaterBodyMarkers";
 import VolcanoMarkers from "./components/Map/VolcanoMarkers";
 import FireMarkers from "./components/Map/FireMarkers";
 import CanadairMarkers from "./components/Map/CanadairMarkers";
+import WildfireHotspotMarkers from "./components/Map/WildfireHotspotMarkers";
+import EarthquakeMarkers from "./components/Map/EarthquakeMarkers";
 import DesertificationMarkers from "./components/Map/DesertificationMarkers";
 import HydroRiskMarkers from "./components/Map/HydroRiskMarkers";
 import AddressMarker from "./components/Map/AddressMarker";
 import FlyTo, { type FlyTarget } from "./components/Map/FlyTo";
 import SatelliteOverlay, { type SatelliteLayerId } from "./components/Map/SatelliteOverlay";
 import LayerControls from "./components/Map/LayerControls";
-import CitySearch from "./components/Search/CitySearch";
-import AddressSearch from "./components/Search/AddressSearch";
+import UnifiedSearch from "./components/Search/UnifiedSearch";
 import CityDetail from "./components/Detail/CityDetail";
 import AddressDetail from "./components/Detail/AddressDetail";
 import WaterBodyDetail from "./components/Detail/WaterBodyDetail";
@@ -21,6 +22,7 @@ import VolcanoDetail from "./components/Detail/VolcanoDetail";
 import FireDetail from "./components/Detail/FireDetail";
 import DesertificationDetail from "./components/Detail/DesertificationDetail";
 import HydroRiskDetail from "./components/Detail/HydroRiskDetail";
+import EarthquakeDetail from "./components/Detail/EarthquakeDetail";
 import InfoPanel from "./components/Info/InfoPanel";
 import { cities } from "./data/cities";
 import type { City } from "./data/cities";
@@ -35,11 +37,14 @@ import type { DesertificationZone } from "./data/desertification-zones";
 import { hydroRiskCases } from "./data/hydro-risk";
 import type { HydroRiskCase } from "./data/hydro-risk";
 import { sentinelHubAvailable } from "./utils/satellite-layers";
+import { haversineKm } from "./utils/geo";
 import type { AddressResult } from "./utils/geocode";
 import { useCanadairPositions } from "./hooks/useCanadairPositions";
+import { useWildfireHotspots } from "./hooks/useWildfireHotspots";
+import { useItalyEarthquakes, type EarthquakeEvent } from "./hooks/useItalyEarthquakes";
 import "./App.css";
 
-type Module = "calore" | "acqua" | "vulcani" | "incendi" | "desertificazione" | "idrogeologico";
+type Module = "calore" | "acqua" | "vulcani" | "incendi" | "desertificazione" | "idrogeologico" | "terremoti";
 
 const MODULES: { id: Module; label: string; icon: string; title: string; subtitle: string; defaultLayer: SatelliteLayerId }[] = [
   {
@@ -90,6 +95,14 @@ const MODULES: { id: Module; label: string; icon: string; title: string; subtitl
     subtitle: "Alluvioni e frane · dal suolo nudo al dissesto",
     defaultLayer: sentinelHubAvailable ? "s2-true-color" : "none",
   },
+  {
+    id: "terremoti",
+    label: "Terremoti",
+    icon: "🌍",
+    title: "Terremoti in Italia",
+    subtitle: "Sismicità INGV in tempo reale · ultimi 7 giorni",
+    defaultLayer: "none",
+  },
 ];
 
 function defaultLayerDate(): string {
@@ -107,8 +120,25 @@ function App() {
   const [selectedFire, setSelectedFire] = useState<FireEvent | null>(null);
   const [selectedZone, setSelectedZone] = useState<DesertificationZone | null>(null);
   const [selectedHydroCase, setSelectedHydroCase] = useState<HydroRiskCase | null>(null);
+  const [selectedEarthquake, setSelectedEarthquake] = useState<EarthquakeEvent | null>(null);
   const [flyTarget, setFlyTarget] = useState<FlyTarget | null>(null);
   const { aircraft: canadairAircraft } = useCanadairPositions();
+  const { hotspots: wildfireHotspots } = useWildfireHotspots();
+  const { events: earthquakes } = useItalyEarthquakes();
+  // Il satellite VIIRS rileva qualsiasi fonte di calore intenso, quindi lava e
+  // crateri attivi finiscono negli stessi dati dei roghi — li separiamo per
+  // distanza dal vulcano più vicino: entro il raggio è "vulcano attivo", oltre
+  // è "incendio". VOLCANO_THERMAL_RADIUS_KM copre l'edificio vulcanico e le
+  // colate sui fianchi senza inghiottire incendi non correlati nelle vicinanze.
+  const VOLCANO_THERMAL_RADIUS_KM = 10;
+  const activeVolcanoNames = new Set(
+    volcanoes
+      .filter((v) => wildfireHotspots.some((h) => haversineKm(v.lat, v.lng, h.lat, h.lon) <= VOLCANO_THERMAL_RADIUS_KM))
+      .map((v) => v.name),
+  );
+  const nonVolcanicHotspots = wildfireHotspots.filter(
+    (h) => !volcanoes.some((v) => haversineKm(v.lat, v.lng, h.lat, h.lon) <= VOLCANO_THERMAL_RADIUS_KM),
+  );
   const [showInfo, setShowInfo] = useState(false);
   // Di default mostriamo subito la temperatura di superficie reale (Sentinel-3
   // LST): il calore va visto, non scoperto in un menu.
@@ -124,6 +154,7 @@ function App() {
     setSelectedFire(null);
     setSelectedZone(null);
     setSelectedHydroCase(null);
+    setSelectedEarthquake(null);
   }
 
   function selectModule(m: Module) {
@@ -172,6 +203,11 @@ function App() {
     setSelectedHydroCase(item);
   }
 
+  function selectEarthquake(event: EarthquakeEvent) {
+    clearSelection();
+    setSelectedEarthquake(event);
+  }
+
   function openInfo() {
     clearSelection();
     setShowInfo(true);
@@ -184,13 +220,19 @@ function App() {
   ) : selectedWaterBody ? (
     <WaterBodyDetail waterBody={selectedWaterBody} onClose={() => setSelectedWaterBody(null)} />
   ) : selectedVolcano ? (
-    <VolcanoDetail volcano={selectedVolcano} onClose={() => setSelectedVolcano(null)} />
+    <VolcanoDetail
+      volcano={selectedVolcano}
+      hasActivity={activeVolcanoNames.has(selectedVolcano.name)}
+      onClose={() => setSelectedVolcano(null)}
+    />
   ) : selectedFire ? (
     <FireDetail fire={selectedFire} onClose={() => setSelectedFire(null)} />
   ) : selectedZone ? (
     <DesertificationDetail zone={selectedZone} onClose={() => setSelectedZone(null)} />
   ) : selectedHydroCase ? (
     <HydroRiskDetail item={selectedHydroCase} onClose={() => setSelectedHydroCase(null)} />
+  ) : selectedEarthquake ? (
+    <EarthquakeDetail event={selectedEarthquake} onClose={() => setSelectedEarthquake(null)} />
   ) : showInfo ? (
     <InfoPanel onClose={() => setShowInfo(false)} />
   ) : undefined;
@@ -225,8 +267,7 @@ function App() {
             </div>
             {module === "calore" && (
               <>
-                <CitySearch cities={cities} onSelect={selectCity} />
-                <AddressSearch onSelect={selectAddress} />
+                <UnifiedSearch cities={cities} onSelectCity={selectCity} onSelectAddress={selectAddress} />
                 <button type="button" className="app-info-button" onClick={openInfo}>
                   Cos'è l'UHI?
                 </button>
@@ -241,9 +282,12 @@ function App() {
             <SatelliteOverlay layer={layer} date={date} />
             {module === "calore" && <CityMarkers cities={cities} onSelect={selectCity} />}
             {module === "acqua" && <WaterBodyMarkers waterBodies={waterBodies} onSelect={selectWaterBody} />}
-            {module === "vulcani" && <VolcanoMarkers volcanoes={volcanoes} onSelect={selectVolcano} />}
+            {module === "vulcani" && (
+              <VolcanoMarkers volcanoes={volcanoes} activeNames={activeVolcanoNames} onSelect={selectVolcano} />
+            )}
             {module === "incendi" && (
               <>
+                <WildfireHotspotMarkers hotspots={nonVolcanicHotspots} />
                 <FireMarkers fires={fires} onSelect={selectFire} />
                 <CanadairMarkers aircraft={canadairAircraft} />
               </>
@@ -254,12 +298,19 @@ function App() {
             {module === "idrogeologico" && (
               <HydroRiskMarkers cases={hydroRiskCases} onSelect={selectHydroCase} />
             )}
+            {module === "terremoti" && <EarthquakeMarkers events={earthquakes} onSelect={selectEarthquake} />}
             {selectedAddress && (
               <AddressMarker lat={selectedAddress.lat} lng={selectedAddress.lng} label={selectedAddress.label} />
             )}
             <FlyTo target={flyTarget} />
           </MapView>
-          <LayerControls layer={layer} onLayerChange={setLayer} date={date} onDateChange={setDate} />
+          <LayerControls
+            layer={layer}
+            onLayerChange={setLayer}
+            date={date}
+            onDateChange={setDate}
+            showYearSlider={module === "calore"}
+          />
         </>
       }
       panel={panel}

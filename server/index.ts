@@ -5,6 +5,8 @@
 //   di breve durata — il client_secret non deve mai arrivare al frontend.
 // - /api/canadair-positions: OpenSky Network blocca CORS da browser, quindi
 //   la richiesta va fatta da qui.
+// - /api/wildfire-hotspots: NASA FIRMS non espone CORS e la MAP_KEY personale
+//   non deve stare nel bundle frontend (abuso di quota se scrapata).
 import express from "express";
 import { canadairFleet } from "../src/data/canadair-fleet";
 
@@ -109,6 +111,80 @@ app.get("/api/canadair-positions", async (_req, res) => {
   canadairCache = { aircraft, updatedAt: Date.now() };
   res.set("Cache-Control", "public, max-age=90");
   res.json(canadairCache);
+});
+
+interface WildfireHotspot {
+  lat: number;
+  lon: number;
+  confidence: string;
+  acqDate: string;
+  acqTime: string;
+  frp: number;
+  daynight: string;
+}
+
+// west,south,east,north — copre l'Italia con un margine.
+const ITALY_BBOX = "6,35,19,47";
+const FIRMS_CACHE_MS = 10 * 60_000; // i satelliti VIIRS ripassano poche volte al giorno
+let firmsCache: { hotspots: WildfireHotspot[]; updatedAt: number } | null = null;
+
+app.get("/api/wildfire-hotspots", async (_req, res) => {
+  const mapKey = process.env.NASA_FIRMS_MAP_KEY;
+  if (!mapKey) {
+    res.status(503).json({ error: "NASA FIRMS non configurato su questo deployment" });
+    return;
+  }
+
+  if (firmsCache && Date.now() - firmsCache.updatedAt < FIRMS_CACHE_MS) {
+    res.json(firmsCache);
+    return;
+  }
+
+  const response = await fetch(
+    `https://firms.modaps.eosdis.nasa.gov/api/area/csv/${mapKey}/VIIRS_SNPP_NRT/${ITALY_BBOX}/1`,
+  );
+  if (!response.ok) {
+    res.status(502).json({ error: "NASA FIRMS non ha risposto" });
+    return;
+  }
+
+  const csv = (await response.text()).trim();
+  const lines = csv.split("\n");
+  const header = lines[0]?.split(",") ?? [];
+  const col = (name: string) => header.indexOf(name);
+  const idx = {
+    lat: col("latitude"),
+    lon: col("longitude"),
+    confidence: col("confidence"),
+    acqDate: col("acq_date"),
+    acqTime: col("acq_time"),
+    frp: col("frp"),
+    daynight: col("daynight"),
+  };
+
+  const hotspots: WildfireHotspot[] =
+    idx.lat < 0
+      ? [] // header inatteso (es. "Invalid MAP_KEY" come unica riga) — lista vuota, non un crash
+      : lines
+          .slice(1)
+          .filter(Boolean)
+          .map((line) => {
+            const cols = line.split(",");
+            return {
+              lat: Number(cols[idx.lat]),
+              lon: Number(cols[idx.lon]),
+              confidence: cols[idx.confidence] ?? "",
+              acqDate: cols[idx.acqDate] ?? "",
+              acqTime: cols[idx.acqTime] ?? "",
+              frp: Number(cols[idx.frp]),
+              daynight: cols[idx.daynight] ?? "",
+            };
+          })
+          .filter((h) => Number.isFinite(h.lat) && Number.isFinite(h.lon));
+
+  firmsCache = { hotspots, updatedAt: Date.now() };
+  res.set("Cache-Control", "public, max-age=600");
+  res.json(firmsCache);
 });
 
 app.listen(PORT, () => {

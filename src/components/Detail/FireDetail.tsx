@@ -41,6 +41,20 @@ export default function FireDetail({ fire, onClose }: FireDetailProps) {
       </section>
 
       <section className="info-panel__section">
+        <h3>Focolai rilevati ora</h3>
+        <p>
+          I puntini arancioni sono focolai rilevati dal satellite VIIRS nelle ultime 24 ore (dati NASA
+          FIRMS). Non è una lista di incendi confermati: il satellite rileva qualsiasi fonte di calore
+          intenso, quindi può includere anche torce industriali, altiforni o grandi roghi non boschivi
+          — è un indicatore di attività recente, non una conferma ufficiale. Nessuna fonte europea
+          pubblica offre lo stesso dato in tempo reale: quella disponibile (EFFIS) si è rivelata, in
+          fase di verifica, ferma al 2021. I focolai entro 10km da un vulcano non compaiono qui — lava
+          e crateri attivi sono anche loro fonti di calore intenso per il satellite, e finiscono invece
+          segnalati nel tab Vulcani.
+        </p>
+      </section>
+
+      <section className="info-panel__section">
         <h3>Canadair in volo ora</h3>
         <p>
           Le icone ✈️ sulla mappa sono i Canadair CL-415 della flotta antincendio della Protezione
@@ -63,8 +77,9 @@ export default function FireDetail({ fire, onClose }: FireDetailProps) {
         <h3>Fonti</h3>
         <p>
           Dati forniti da: Copernicus Sentinel Hub (ESA/UE), EFFIS (European Forest Fire Information
-          System), ISPRA. Le stime citate sopra sono ordini di grandezza da fonti pubbliche, non
-          calcoli in tempo reale di questo sito.
+          System), ISPRA, NASA FIRMS (focolai in tempo reale), OpenSky Network (posizioni Canadair). Le
+          stime citate sopra sono ordini di grandezza da fonti pubbliche, non calcoli in tempo reale di
+          questo sito.
         </p>
       </section>
     </div>

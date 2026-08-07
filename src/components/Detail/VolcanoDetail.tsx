@@ -4,6 +4,7 @@ import "../Info/InfoPanel.css";
 
 interface VolcanoDetailProps {
   volcano: Volcano;
+  hasActivity: boolean;
   onClose: () => void;
 }
 
@@ -12,7 +13,7 @@ function formatTime(iso: string): string {
   return Number.isNaN(d.getTime()) ? iso : d.toLocaleString("it-IT");
 }
 
-export default function VolcanoDetail({ volcano, onClose }: VolcanoDetailProps) {
+export default function VolcanoDetail({ volcano, hasActivity, onClose }: VolcanoDetailProps) {
   const { events, loading, error } = useSeismicity(volcano.lat, volcano.lng);
 
   return (
@@ -28,6 +29,19 @@ export default function VolcanoDetail({ volcano, onClose }: VolcanoDetailProps) 
           ×
         </button>
       </div>
+
+      {hasActivity && (
+        <section className="info-panel__section info-panel__section--alert">
+          <h3>🔴 Attività termica rilevata ora</h3>
+          <p>
+            Il satellite VIIRS (NASA FIRMS) ha rilevato una fonte di calore intenso su questo vulcano
+            nelle ultime 24 ore — può indicare colate laviche, un cratere attivo, o altra attività
+            eruttiva in corso. Non è una conferma ufficiale: per lo stato reale consulta il bollettino
+            INGV qui sotto. Attiva il layer "Calore/colate laviche — SWIR" dal selettore mappa per
+            vederla dal satellite, o la webcam live per vederla dal vivo.
+          </p>
+        </section>
+      )}
 
       <section className="info-panel__section">
         <h3>Stato</h3>
