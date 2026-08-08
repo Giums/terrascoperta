@@ -1,10 +1,14 @@
 import type { Volcano } from "../../data/volcanoes";
 import { useSeismicity } from "../../hooks/useSeismicity";
+import { useVolcanoWebcams } from "../../hooks/useVolcanoWebcams";
+import { staticSnapshotUrl } from "../../utils/satellite-layers";
+import { activityLabel } from "../../utils/volcano-activity";
 import "../Info/InfoPanel.css";
 
 interface VolcanoDetailProps {
   volcano: Volcano;
-  hasActivity: boolean;
+  /** FRP massima (MW) rilevata nel raggio del vulcano, null = nessuna attività rilevata ora. */
+  frp: number | null;
   onClose: () => void;
 }
 
@@ -13,8 +17,30 @@ function formatTime(iso: string): string {
   return Number.isNaN(d.getTime()) ? iso : d.toLocaleString("it-IT");
 }
 
-export default function VolcanoDetail({ volcano, hasActivity, onClose }: VolcanoDetailProps) {
+function todayMinus(days: number): string {
+  const d = new Date();
+  d.setDate(d.getDate() - days);
+  return d.toISOString().slice(0, 10);
+}
+
+// Margine intorno al vulcano per l'anteprima satellitare: ~15-17km, copre
+// l'edificio vulcanico e i fianchi senza inquadrare troppo territorio intorno.
+const SNAPSHOT_MARGIN_DEG = 0.15;
+
+export default function VolcanoDetail({ volcano, frp, onClose }: VolcanoDetailProps) {
   const { events, loading, error } = useSeismicity(volcano.lat, volcano.lng);
+  const { shots: webcamShots } = useVolcanoWebcams(volcano.name);
+  const hasActivity = frp != null;
+
+  const bbox = {
+    minLat: volcano.lat - SNAPSHOT_MARGIN_DEG,
+    maxLat: volcano.lat + SNAPSHOT_MARGIN_DEG,
+    minLng: volcano.lng - SNAPSHOT_MARGIN_DEG,
+    maxLng: volcano.lng + SNAPSHOT_MARGIN_DEG,
+  };
+  const snapshotDate = todayMinus(2);
+  const trueColorUrl = staticSnapshotUrl("s2-true-color", bbox, snapshotDate);
+  const swirUrl = staticSnapshotUrl("s2-swir", bbox, snapshotDate);
 
   return (
     <div className="info-panel">
@@ -32,13 +58,12 @@ export default function VolcanoDetail({ volcano, hasActivity, onClose }: Volcano
 
       {hasActivity && (
         <section className="info-panel__section info-panel__section--alert">
-          <h3>🔴 Attività termica rilevata ora</h3>
+          <h3>🔴 {activityLabel(frp)}</h3>
           <p>
             Il satellite VIIRS (NASA FIRMS) ha rilevato una fonte di calore intenso su questo vulcano
-            nelle ultime 24 ore — può indicare colate laviche, un cratere attivo, o altra attività
-            eruttiva in corso. Non è una conferma ufficiale: per lo stato reale consulta il bollettino
-            INGV qui sotto. Attiva il layer "Calore/colate laviche — SWIR" dal selettore mappa per
-            vederla dal satellite, o la webcam live per vederla dal vivo.
+            nelle ultime 24 ore (potenza radiativa {frp.toFixed(1)} MW) — può indicare colate laviche,
+            un cratere attivo, o altra attività eruttiva in corso. Non è una conferma ufficiale: per lo
+            stato reale consulta il bollettino INGV qui sotto.
           </p>
         </section>
       )}
@@ -55,17 +80,66 @@ export default function VolcanoDetail({ volcano, hasActivity, onClose }: Volcano
         </p>
       </section>
 
+      {(trueColorUrl || swirUrl) && (
+        <section className="info-panel__section">
+          <h3>Immagini satellitari recenti</h3>
+          <div className="volcano-detail__snapshots">
+            {trueColorUrl && (
+              <figure>
+                <img src={trueColorUrl} alt={`${volcano.name}, vero colore, immagine satellitare recente`} loading="lazy" />
+                <figcaption>Vero colore</figcaption>
+              </figure>
+            )}
+            {swirUrl && (
+              <figure>
+                <img src={swirUrl} alt={`${volcano.name}, falso colore SWIR, calore/colate laviche`} loading="lazy" />
+                <figcaption>SWIR — calore/colate</figcaption>
+              </figure>
+            )}
+          </div>
+          <p>
+            Composito cloud-free sugli ultimi 13 giorni (Sentinel-2, ~10m). Se il vulcano è stato
+            nuvoloso in tutto questo periodo, l'immagine può risultare in gran parte bianca/coperta —
+            limite reale dell'ottico, non un errore. Le stesse immagini, navigabili, sono nel layer
+            satellitare del selettore mappa.
+          </p>
+        </section>
+      )}
+
       <section className="info-panel__section">
-        <h3>Webcam live</h3>
-        <p>
-          <a href={volcano.webcamUrl} target="_blank" rel="noreferrer">
-            Video-sorveglianza INGV in tempo reale ↗
-          </a>
-        </p>
-        <p>
-          Le webcam ufficiali INGV caricano lo stream tramite script proprio, non un feed
-          incorporabile: il link apre la pagina originale in una nuova scheda.
-        </p>
+        <h3>Webcam</h3>
+        {webcamShots.length > 0 ? (
+          <>
+            <div className="volcano-detail__snapshots">
+              {webcamShots.map((shot) => (
+                <figure key={shot.code}>
+                  <img src={shot.imageUrl} alt={`Webcam INGV ${shot.code}, ${volcano.name}`} loading="lazy" />
+                  <figcaption>{shot.code}</figcaption>
+                </figure>
+              ))}
+            </div>
+            <p>
+              Foto reali dalle telecamere INGV-OE, non uno stream — si aggiornano da sole ogni pochi
+              minuti (il sito le ricarica ogni 5 minuti). Notte, nebbia o pioggia possono renderle
+              scure o poco leggibili: limite reale della telecamera, non un errore.{" "}
+              <a href={volcano.webcamUrl} target="_blank" rel="noreferrer">
+                Pagina ufficiale INGV ↗
+              </a>
+            </p>
+          </>
+        ) : (
+          <>
+            <p>
+              <a href={volcano.webcamUrl} target="_blank" rel="noreferrer">
+                Video-sorveglianza INGV in tempo reale ↗
+              </a>
+            </p>
+            <p>
+              Per questo vulcano non ho trovato una galleria di immagini incorporabile (verificato,
+              non solo non cercato) — il link apre la pagina ufficiale in una nuova scheda.
+            </p>
+          </>
+        )}
       </section>
 
       <section className="info-panel__section">

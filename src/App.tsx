@@ -13,6 +13,7 @@ import HydroRiskMarkers from "./components/Map/HydroRiskMarkers";
 import AddressMarker from "./components/Map/AddressMarker";
 import FlyTo, { type FlyTarget } from "./components/Map/FlyTo";
 import SatelliteOverlay, { type SatelliteLayerId } from "./components/Map/SatelliteOverlay";
+import SatelliteLoadingIndicator from "./components/Map/SatelliteLoadingIndicator";
 import LayerControls from "./components/Map/LayerControls";
 import UnifiedSearch from "./components/Search/UnifiedSearch";
 import CityDetail from "./components/Detail/CityDetail";
@@ -131,11 +132,14 @@ function App() {
   // è "incendio". VOLCANO_THERMAL_RADIUS_KM copre l'edificio vulcanico e le
   // colate sui fianchi senza inghiottire incendi non correlati nelle vicinanze.
   const VOLCANO_THERMAL_RADIUS_KM = 10;
-  const activeVolcanoNames = new Set(
-    volcanoes
-      .filter((v) => wildfireHotspots.some((h) => haversineKm(v.lat, v.lng, h.lat, h.lon) <= VOLCANO_THERMAL_RADIUS_KM))
-      .map((v) => v.name),
-  );
+  // Nome vulcano -> FRP massima (MW) tra i punti caldi rilevati nel raggio —
+  // il MAX di un singolo pixel è un indicatore migliore di "c'è un punto
+  // davvero caldo" rispetto alla somma di tanti punti deboli sparsi.
+  const volcanoActivity = new Map<string, number>();
+  for (const v of volcanoes) {
+    const nearby = wildfireHotspots.filter((h) => haversineKm(v.lat, v.lng, h.lat, h.lon) <= VOLCANO_THERMAL_RADIUS_KM);
+    if (nearby.length > 0) volcanoActivity.set(v.name, Math.max(...nearby.map((h) => h.frp)));
+  }
   const nonVolcanicHotspots = wildfireHotspots.filter(
     (h) => !volcanoes.some((v) => haversineKm(v.lat, v.lng, h.lat, h.lon) <= VOLCANO_THERMAL_RADIUS_KM),
   );
@@ -222,7 +226,7 @@ function App() {
   ) : selectedVolcano ? (
     <VolcanoDetail
       volcano={selectedVolcano}
-      hasActivity={activeVolcanoNames.has(selectedVolcano.name)}
+      frp={volcanoActivity.get(selectedVolcano.name) ?? null}
       onClose={() => setSelectedVolcano(null)}
     />
   ) : selectedFire ? (
@@ -280,10 +284,11 @@ function App() {
         <>
           <MapView>
             <SatelliteOverlay layer={layer} date={date} />
+            <SatelliteLoadingIndicator />
             {module === "calore" && <CityMarkers cities={cities} onSelect={selectCity} />}
             {module === "acqua" && <WaterBodyMarkers waterBodies={waterBodies} onSelect={selectWaterBody} />}
             {module === "vulcani" && (
-              <VolcanoMarkers volcanoes={volcanoes} activeNames={activeVolcanoNames} onSelect={selectVolcano} />
+              <VolcanoMarkers volcanoes={volcanoes} activity={volcanoActivity} onSelect={selectVolcano} />
             )}
             {module === "incendi" && (
               <>
@@ -309,7 +314,7 @@ function App() {
             onLayerChange={setLayer}
             date={date}
             onDateChange={setDate}
-            showYearSlider={module === "calore"}
+            compareMode={module === "calore" ? "heat" : module === "acqua" ? "sea" : "none"}
           />
         </>
       }

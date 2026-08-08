@@ -1,0 +1,13 @@
+.satellite-loading {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 1000;
+  padding: 0.5rem 0.85rem;
+  background: rgba(18, 22, 30, 0.92);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-float);
+  font-size: 0.8rem;
+  color: #cbd5e1;
+}

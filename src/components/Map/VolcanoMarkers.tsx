@@ -1,17 +1,20 @@
 import DotMarker from "./DotMarker";
 import type { Volcano } from "../../data/volcanoes";
+import { activityLabel } from "../../utils/volcano-activity";
 
 interface VolcanoMarkersProps {
   volcanoes: Volcano[];
-  activeNames: Set<string>;
+  /** Nome vulcano -> FRP massima (MW) rilevata nel raggio, assente = nessuna attività rilevata. */
+  activity: Map<string, number>;
   onSelect: (volcano: Volcano) => void;
 }
 
-export default function VolcanoMarkers({ volcanoes, activeNames, onSelect }: VolcanoMarkersProps) {
+export default function VolcanoMarkers({ volcanoes, activity, onSelect }: VolcanoMarkersProps) {
   return (
     <>
       {volcanoes.map((v) => {
-        const active = activeNames.has(v.name);
+        const frp = activity.get(v.name);
+        const active = frp != null;
         return (
           <DotMarker
             key={v.name}
@@ -30,7 +33,7 @@ export default function VolcanoMarkers({ volcanoes, activeNames, onSelect }: Vol
                 {active && (
                   <>
                     <br />
-                    🔴 attività termica rilevata ora
+                    🔴 {activityLabel(frp)}
                   </>
                 )}
               </>

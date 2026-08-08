@@ -21,6 +21,13 @@ interface SatelliteOverlayProps {
  * `{bbox-epsg-3857}` è sostituito da MapLibre con il bbox del tile richiesto —
  * è così che si collega un servizio WMS (pensato per bbox arbitrari) a un
  * source raster XYZ (pensato per tile fissi).
+ * Tile a 512px (non 256): la collection S2L2A rifiuta richieste WMS oltre
+ * 1500 m/pixel — a 256px questo limite scatta già a zoom 7, obbligando a
+ * zoomare parecchio prima di vedere qualcosa. Raddoppiando i pixel per tile
+ * si dimezzano i metri/pixel a parità di zoom, e il limite si sposta a
+ * zoom 6 — la vista di default del sito (verificato con una richiesta reale:
+ * a 256px l'area torna l'immagine di errore di Sentinel Hub, a 512px la
+ * stessa area torna dati veri).
  */
 export default function SatelliteOverlay({ layer, date }: SatelliteOverlayProps) {
   if (layer === "none") return null;
@@ -33,10 +40,10 @@ export default function SatelliteOverlay({ layer, date }: SatelliteOverlayProps)
     `https://sh.dataspace.copernicus.eu/ogc/wms/${instance}` +
     `?SERVICE=WMS&REQUEST=GetMap&VERSION=1.3.0&LAYERS=${encodeURIComponent(name)}` +
     `&STYLES=&FORMAT=image/png&TRANSPARENT=true&CRS=EPSG:3857` +
-    `&WIDTH=256&HEIGHT=256&BBOX={bbox-epsg-3857}&time=${encodeURIComponent(time)}`;
+    `&WIDTH=512&HEIGHT=512&BBOX={bbox-epsg-3857}&time=${encodeURIComponent(time)}`;
 
   return (
-    <Source key={`${layer}-${date}`} id="satellite" type="raster" tiles={[tileUrl]} tileSize={256}>
+    <Source key={`${layer}-${date}`} id="satellite" type="raster" tiles={[tileUrl]} tileSize={512}>
       <Layer
         id="satellite-layer"
         type="raster"

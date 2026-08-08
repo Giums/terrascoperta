@@ -7,6 +7,8 @@
 //   la richiesta va fatta da qui.
 // - /api/wildfire-hotspots: NASA FIRMS non espone CORS e la MAP_KEY personale
 //   non deve stare nel bundle frontend (abuso di quota se scrapata).
+// - /api/volcano-webcams: la pagina galleria INGV è HTML statico ma senza
+//   CORS — va letta e "spacchettata" qui, il browser non può leggerla da sé.
 import express from "express";
 import { canadairFleet } from "../src/data/canadair-fleet";
 
@@ -185,6 +187,59 @@ app.get("/api/wildfire-hotspots", async (_req, res) => {
   firmsCache = { hotspots, updatedAt: Date.now() };
   res.set("Cache-Control", "public, max-age=600");
   res.json(firmsCache);
+});
+
+interface WebcamShot {
+  code: string;
+  imageUrl: string;
+}
+
+// Solo Etna e Stromboli hanno questa galleria statica (dominio ct.ingv.it).
+// Vesuvio/Campi Flegrei (dominio ov.ingv.it) non hanno un equivalente
+// pubblico trovato — verificato, non solo non ancora cercato.
+const WEBCAM_GALLERIES: Record<string, string> = {
+  Etna: "https://www.ct.ingv.it/sezioniesterne/webcam/WebcamEtna.php",
+  Stromboli: "https://www.ct.ingv.it/sezioniesterne/webcam/WebcamEolie.php",
+};
+
+const WEBCAM_CACHE_MS = 5 * 60_000;
+const webcamCache = new Map<string, { shots: WebcamShot[]; updatedAt: number }>();
+
+app.get("/api/volcano-webcams/:volcano", async (req, res) => {
+  const galleryUrl = WEBCAM_GALLERIES[req.params.volcano];
+  if (!galleryUrl) {
+    res.status(404).json({ error: "Nessuna galleria webcam per questo vulcano" });
+    return;
+  }
+
+  const cached = webcamCache.get(req.params.volcano);
+  if (cached && Date.now() - cached.updatedAt < WEBCAM_CACHE_MS) {
+    res.json(cached);
+    return;
+  }
+
+  const response = await fetch(galleryUrl);
+  if (!response.ok) {
+    res.status(502).json({ error: "Galleria INGV non ha risposto" });
+    return;
+  }
+
+  const html = await response.text();
+  const base = new URL(galleryUrl);
+  // Pagina HTML statica generata server-side da INGV, non un'API — il
+  // formato è quello che è, niente di più robusto disponibile.
+  const pattern = /<img src = '([^']+)'[^>]*><\/a><\/div><div class = 'text'>([^<]+)<\/div>/g;
+  const shots: WebcamShot[] = [];
+  for (const match of html.matchAll(pattern)) {
+    const [, relSrc, code] = match;
+    if (relSrc.includes("Nowork")) continue; // telecamera fuori servizio
+    shots.push({ code, imageUrl: new URL(relSrc, base).toString() });
+  }
+
+  const result = { shots, updatedAt: Date.now() };
+  webcamCache.set(req.params.volcano, result);
+  res.set("Cache-Control", "public, max-age=300");
+  res.json(result);
 });
 
 app.listen(PORT, () => {
