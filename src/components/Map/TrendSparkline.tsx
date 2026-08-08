@@ -1,44 +1,44 @@
-import type { YearTemp } from "../../hooks/useSeasonalTrend";
 import "./TrendSparkline.css";
 
+export interface TrendPoint {
+  x: number;
+  y: number | null;
+}
+
 interface TrendSparklineProps {
-  data: YearTemp[];
-  selectedYear: number;
+  data: TrendPoint[];
+  highlightX?: number;
+  ariaLabel: string;
 }
 
 const WIDTH = 200;
 const HEIGHT = 44;
 const PAD = 5;
 
-export default function TrendSparkline({ data, selectedYear }: TrendSparklineProps) {
-  const valid = data.filter((d): d is { year: number; avgTemp: number } => d.avgTemp != null);
+export default function TrendSparkline({ data, highlightX, ariaLabel }: TrendSparklineProps) {
+  const valid = data.filter((d): d is { x: number; y: number } => d.y != null);
   if (valid.length < 2) return null;
 
-  const minYear = data[0].year;
-  const maxYear = data[data.length - 1].year;
-  const minT = Math.min(...valid.map((d) => d.avgTemp));
-  const maxT = Math.max(...valid.map((d) => d.avgTemp));
-  const range = maxT - minT || 1;
+  const minX = data[0].x;
+  const maxX = data[data.length - 1].x;
+  const minY = Math.min(...valid.map((d) => d.y));
+  const maxY = Math.max(...valid.map((d) => d.y));
+  const range = maxY - minY || 1;
 
-  function x(year: number): number {
-    return PAD + ((year - minYear) / (maxYear - minYear)) * (WIDTH - PAD * 2);
+  function px(xVal: number): number {
+    return PAD + ((xVal - minX) / (maxX - minX || 1)) * (WIDTH - PAD * 2);
   }
-  function y(temp: number): number {
-    return HEIGHT - PAD - ((temp - minT) / range) * (HEIGHT - PAD * 2);
+  function py(yVal: number): number {
+    return HEIGHT - PAD - ((yVal - minY) / range) * (HEIGHT - PAD * 2);
   }
 
-  const path = valid.map((d, i) => `${i === 0 ? "M" : "L"}${x(d.year).toFixed(1)},${y(d.avgTemp).toFixed(1)}`).join(" ");
-  const selected = valid.find((d) => d.year === selectedYear);
+  const path = valid.map((d, i) => `${i === 0 ? "M" : "L"}${px(d.x).toFixed(1)},${py(d.y).toFixed(1)}`).join(" ");
+  const selected = valid.find((d) => d.x === highlightX);
 
   return (
-    <svg
-      viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
-      className="trend-sparkline"
-      role="img"
-      aria-label={`Andamento della temperatura media stagionale dal ${minYear} al ${maxYear}`}
-    >
+    <svg viewBox={`0 0 ${WIDTH} ${HEIGHT}`} className="trend-sparkline" role="img" aria-label={ariaLabel}>
       <path d={path} className="trend-sparkline__line" />
-      {selected && <circle cx={x(selected.year)} cy={y(selected.avgTemp)} r={3.5} className="trend-sparkline__dot" />}
+      {selected && <circle cx={px(selected.x)} cy={py(selected.y)} r={3.5} className="trend-sparkline__dot" />}
     </svg>
   );
 }

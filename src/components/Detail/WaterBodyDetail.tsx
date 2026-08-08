@@ -1,4 +1,6 @@
 import type { WaterBody } from "../../data/water-bodies";
+import { useWaterLevel } from "../../hooks/useWaterLevel";
+import TrendSparkline from "../Map/TrendSparkline";
 import "../Info/InfoPanel.css";
 
 interface WaterBodyDetailProps {
@@ -6,7 +8,18 @@ interface WaterBodyDetailProps {
   onClose: () => void;
 }
 
+function formatTimestamp(iso: string): string {
+  return new Date(iso).toLocaleString("it-IT", {
+    day: "2-digit",
+    month: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
 export default function WaterBodyDetail({ waterBody, onClose }: WaterBodyDetailProps) {
+  const level = useWaterLevel(waterBody.sensorId ?? null);
+
   return (
     <div className="info-panel">
       <div className="info-panel__header">
@@ -28,6 +41,37 @@ export default function WaterBodyDetail({ waterBody, onClose }: WaterBodyDetailP
           <em>Fonte: {waterBody.source}</em>
         </p>
       </section>
+
+      {waterBody.sensorId && (
+        <section className="info-panel__section">
+          <h3>Livello idrometrico in tempo reale</h3>
+          {level.loading ? (
+            <p>Caricamento…</p>
+          ) : level.current ? (
+            <>
+              <p>
+                <strong>{level.current.value} cm</strong> allo zero idrometrico della stazione —
+                stazione {waterBody.sensorLabel}, aggiornato alle {formatTimestamp(level.current.timestamp)}.
+              </p>
+              {level.series.length > 1 && (
+                <TrendSparkline
+                  data={level.series.map((d, i) => ({ x: i, y: d.avgLevel }))}
+                  highlightX={level.series.length - 1}
+                  ariaLabel={`Andamento del livello idrometrico dal ${level.series[0].day} a oggi`}
+                />
+              )}
+              <p>
+                <em>
+                  Rete sensori ARPA Lombardia rinumerata a inizio 2026: storico disponibile solo dal{" "}
+                  {level.series[0]?.day.slice(0, 10)}, non un trend pluriennale.
+                </em>
+              </p>
+            </>
+          ) : (
+            <p>Dato non disponibile al momento.</p>
+          )}
+        </section>
+      )}
 
       <section className="info-panel__section">
         <h3>Come il satellite vede l'acqua</h3>

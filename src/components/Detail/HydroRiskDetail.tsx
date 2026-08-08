@@ -1,4 +1,5 @@
 import type { HydroRiskCase } from "../../data/hydro-risk";
+import HydroRiskSafetyInfo from "./HydroRiskSafetyInfo";
 import "../Info/InfoPanel.css";
 
 interface HydroRiskDetailProps {
@@ -26,6 +27,8 @@ export default function HydroRiskDetail({ item, onClose }: HydroRiskDetailProps)
           <em>Fonte: {item.source}</em>
         </p>
       </section>
+
+      <HydroRiskSafetyInfo />
 
       <section className="info-panel__section">
         <h3>Perché gli alberi contano</h3>

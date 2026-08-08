@@ -1,4 +1,6 @@
-# 🌡️ Isole di Calore Urbane — Italia
+# 🌍 TerraScoperta
+
+*(Nome provvisorio)*
 
 **[🇬🇧 Read in English](README.md)**
 

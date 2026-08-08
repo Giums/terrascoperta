@@ -8,6 +8,9 @@ export interface WaterBody {
   region: string;
   description: string;
   source: string;
+  /** idsensore ARPA Lombardia (dataset live "Dati sensori meteo", dati.lombardia.it/resource/647i-nhxk) per il livello idrometrico in tempo reale — solo dove verificato attivo. */
+  sensorId?: number;
+  sensorLabel?: string;
 }
 
 export const waterBodies: WaterBody[] = [
@@ -22,6 +25,8 @@ export const waterBodies: WaterBody[] = [
       "mai registrate, con la risalita del cuneo salino dal mare che ha raggiunto decine di km " +
       "nell'entroterra, compromettendo l'irrigazione nel delta.",
     source: "ARPA Piemonte/Emilia-Romagna, Osservatorio permanente utilizzi idrici del distretto del fiume Po",
+    sensorId: 8101,
+    sensorLabel: "Borgoforte (MN)",
   },
   {
     name: "Tevere",
@@ -66,6 +71,8 @@ export const waterBodies: WaterBody[] = [
       "Il lago più grande d'Italia. Nell'estate 2022 il livello è sceso vicino ai minimi storici, " +
       "riportando alla luce isolotti e passaggi normalmente sommersi.",
     source: "AIPo, bollettino livelli laghi regolati",
+    sensorId: 32390,
+    sensorLabel: "Manerba del Garda (BS)",
   },
   {
     name: "Lago di Como",
@@ -77,6 +84,8 @@ export const waterBodies: WaterBody[] = [
       "Livelli soggetti a forte variabilità stagionale; le annate più siccitose mostrano un calo " +
       "marcato del livello medio estivo rispetto alla serie storica del secondo dopoguerra.",
     source: "Consorzio dell'Adda, bollettino idrologico",
+    sensorId: 8382,
+    sensorLabel: "Como viale Geno",
   },
   {
     name: "Lago Maggiore",
@@ -88,6 +97,8 @@ export const waterBodies: WaterBody[] = [
       "Regolato per uso irriguo e idroelettrico. Nelle estati siccitose il livello scende sotto lo " +
       "zero idrometrico, riducendo la capacità di compensare la magra del Po a valle.",
     source: "Consorzio del Ticino, bollettino idrologico",
+    sensorId: 3062,
+    sensorLabel: "Golasecca-Miorina (VA)",
   },
   {
     name: "Lago Trasimeno",
@@ -124,6 +135,8 @@ export const waterBodies: WaterBody[] = [
       "d'Europa: nelle estati siccitose la competizione tra rilascio a valle e mantenimento del " +
       "livello del lago diventa un tema politico, non solo tecnico.",
     source: "Consorzio dell'Adda, bollettino idrologico",
+    sensorId: 17448,
+    sensorLabel: "Rivolta d'Adda (CR)",
   },
   {
     name: "Piave",
@@ -246,6 +259,8 @@ export const waterBodies: WaterBody[] = [
       "questo il suo livello riflette più direttamente l'andamento delle precipitazioni stagionali, " +
       "senza la compensazione artificiale che attutisce le magre altrove.",
     source: "ARPA Lombardia, bollettino idrologico",
+    sensorId: 8385,
+    sensorLabel: "Sarnico (BG)",
   },
   {
     name: "Lago di Bilancino",

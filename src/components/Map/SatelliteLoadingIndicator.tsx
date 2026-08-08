@@ -16,11 +16,16 @@ export default function SatelliteLoadingIndicator() {
   useEffect(() => {
     if (!map) return;
 
+    // MapLibre a volte emette questi eventi in modo sincrono dentro il commit
+    // di un altro componente (es. quando il Source satellite viene ricreato) —
+    // React avvisa se si chiama setState in quel momento ("Cannot update a
+    // component while rendering a different component"). queueMicrotask
+    // sposta l'update subito dopo, fuori dal render in corso.
     function handleLoading(e: MapSourceDataEvent) {
-      if (e.sourceId === "satellite") setLoading(true);
+      if (e.sourceId === "satellite") queueMicrotask(() => setLoading(true));
     }
     function handleIdle() {
-      setLoading(false);
+      queueMicrotask(() => setLoading(false));
     }
 
     map.on("sourcedataloading", handleLoading);

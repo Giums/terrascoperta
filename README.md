@@ -1,4 +1,6 @@
-# 🌡️ Urban Heat Islands — Italy
+# 🌍 TerraScoperta
+
+*(Provisional name)*
 
 **[🇮🇹 Leggi in italiano](README.it.md)**
 

@@ -34,10 +34,14 @@ function startTime(): string {
  * A differenza di useSeismicity (un punto + raggio, per il dettaglio di un
  * singolo vulcano) qui la query è su tutta l'Italia via bounding box.
  */
-export function useItalyEarthquakes(): EarthquakeState {
-  const [state, setState] = useState<EarthquakeState>({ events: [], loading: true, error: null });
+export function useItalyEarthquakes(enabled = true): EarthquakeState {
+  const [state, setState] = useState<EarthquakeState>({ events: [], loading: enabled, error: null });
 
   useEffect(() => {
+    if (!enabled) {
+      setState({ events: [], loading: false, error: null });
+      return;
+    }
     let cancelled = false;
 
     function fetchEvents() {
@@ -86,7 +90,7 @@ export function useItalyEarthquakes(): EarthquakeState {
       cancelled = true;
       clearInterval(interval);
     };
-  }, []);
+  }, [enabled]);
 
   return state;
 }

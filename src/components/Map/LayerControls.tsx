@@ -1,7 +1,8 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { layerMinZoom, sentinelHubAvailable, type SatelliteLayerId } from "../../utils/satellite-layers";
 import { useSeasonalTrend, seasonCutoffMonthDay } from "../../hooks/useSeasonalTrend";
 import { useMarineTrend, MARINE_MIN_YEAR } from "../../hooks/useMarineTrend";
+import { haversineKm } from "../../utils/geo";
 import TrendSparkline from "./TrendSparkline";
 import "./LayerControls.css";
 
@@ -14,6 +15,7 @@ interface LayerControlsProps {
   date: string;
   onDateChange: (date: string) => void;
   compareMode: CompareMode;
+  mapCenter: { lat: number; lng: number };
 }
 
 const SENTINEL_OPTIONS: { id: SatelliteLayerId; label: string }[] = [
@@ -37,15 +39,39 @@ const LAND_POINTS = [
   { lat: 37.5079, lng: 15.083 }, // Catania
 ];
 
-// Quattro punti in mare aperto (verificati con l'API: servono coordinate
-// abbastanza al largo, altrimenti il modello marino restituisce null perché
-// il punto cade su una cella "terra").
-const SEA_POINTS = [
-  { lat: 40.0, lng: 13.5 }, // Tirreno
-  { lat: 38.5, lng: 17.5 }, // Ionio
-  { lat: 43.8, lng: 9.2 }, // Ligure
-  { lat: 40.0, lng: 8.0 }, // Sardegna ovest
+// Zone di mare italiane: ognuna ha un punto al largo verificato con l'API
+// (serve stare abbastanza lontani da costa, altrimenti il modello marino
+// restituisce null perché il punto cade su una cella "terra") e un punto di
+// riferimento a terra usato solo per scegliere la zona più vicina a dove sta
+// guardando l'utente sulla mappa.
+interface SeaZone {
+  name: string;
+  refLat: number;
+  refLng: number;
+  point: { lat: number; lng: number };
+}
+
+const SEA_ZONES: SeaZone[] = [
+  { name: "Liguria", refLat: 44.41, refLng: 8.93, point: { lat: 43.8, lng: 9.2 } },
+  { name: "Tirreno (Toscana/Lazio/Campania)", refLat: 41.9, refLng: 12.9, point: { lat: 40.0, lng: 13.5 } },
+  { name: "Ionio (Puglia/Basilicata/Calabria)", refLat: 39.7, refLng: 17.0, point: { lat: 38.5, lng: 17.5 } },
+  { name: "Adriatico (Veneto/Emilia-Romagna/Marche/Abruzzo)", refLat: 43.6, refLng: 13.6, point: { lat: 43.3, lng: 14.2 } },
+  { name: "Sicilia", refLat: 37.8, refLng: 13.9, point: { lat: 36.7, lng: 13.8 } },
+  { name: "Sardegna", refLat: 40.1, refLng: 9.0, point: { lat: 40.0, lng: 8.0 } },
 ];
+
+function nearestSeaZone(lat: number, lng: number): SeaZone {
+  let best = SEA_ZONES[0];
+  let bestDist = haversineKm(lat, lng, best.refLat, best.refLng);
+  for (const zone of SEA_ZONES.slice(1)) {
+    const dist = haversineKm(lat, lng, zone.refLat, zone.refLng);
+    if (dist < bestDist) {
+      best = zone;
+      bestDist = dist;
+    }
+  }
+  return best;
+}
 
 function todayMinus(days: number): string {
   const d = new Date();
@@ -145,14 +171,23 @@ function YearCompare({ year, onYearChange }: YearCompareProps) {
           "Dato non disponibile"
         )}
       </div>
-      <TrendSparkline data={data} selectedYear={displayYear} />
+      <TrendSparkline
+        data={data.map((d) => ({ x: d.year, y: d.avgTemp }))}
+        highlightX={displayYear}
+        ariaLabel={`Andamento della temperatura media stagionale dal ${HEAT_MIN_YEAR} al ${CURRENT_YEAR}`}
+      />
     </>
   );
 }
 
-function SeaCompare({ year, onYearChange }: YearCompareProps) {
+interface SeaCompareProps extends YearCompareProps {
+  mapCenter: { lat: number; lng: number };
+}
+
+function SeaCompare({ year, onYearChange, mapCenter }: SeaCompareProps) {
   const { rawValue, displayYear, onSlide } = useDebouncedYear(Math.max(year, MARINE_MIN_YEAR), onYearChange);
-  const { data, loading } = useMarineTrend(SEA_POINTS, MARINE_MIN_YEAR, CURRENT_YEAR);
+  const zone = useMemo(() => nearestSeaZone(mapCenter.lat, mapCenter.lng), [mapCenter.lat, mapCenter.lng]);
+  const { data, loading } = useMarineTrend([zone.point], MARINE_MIN_YEAR, CURRENT_YEAR);
   const current = data.find((d) => d.year === displayYear)?.avgTemp ?? null;
   const baseline = data.find((d) => d.year === MARINE_MIN_YEAR)?.avgTemp ?? null;
   const delta = current != null && baseline != null ? current - baseline : null;
@@ -160,7 +195,7 @@ function SeaCompare({ year, onYearChange }: YearCompareProps) {
   return (
     <>
       <label className="layer-controls__label" htmlFor="layer-year">
-        Estate {displayYear} — media Tirreno/Ionio/Ligure/Sardegna (1 giu → {seasonCutoffMonthDay()})
+        Estate {displayYear} — mare {zone.name} (1 giu → {seasonCutoffMonthDay()})
       </label>
       <input
         id="layer-year"
@@ -173,7 +208,7 @@ function SeaCompare({ year, onYearChange }: YearCompareProps) {
       />
       <div className="layer-controls__temp">
         {loading ? (
-          "Calcolo su 4 punti mare…"
+          `Calcolo mare ${zone.name}…`
         ) : current != null ? (
           <>
             <strong>{current.toFixed(1)}°C</strong>
@@ -189,8 +224,13 @@ function SeaCompare({ year, onYearChange }: YearCompareProps) {
           "Dato non disponibile"
         )}
       </div>
-      <TrendSparkline data={data} selectedYear={displayYear} />
+      <TrendSparkline
+        data={data.map((d) => ({ x: d.year, y: d.avgTemp }))}
+        highlightX={displayYear}
+        ariaLabel={`Andamento della temperatura media stagionale del mare ${zone.name} dal ${MARINE_MIN_YEAR} al ${CURRENT_YEAR}`}
+      />
       <p className="layer-controls__hint">
+        Zona scelta in base a dove stai guardando sulla mappa — spostati per vedere un'altra costa.
         L'archivio storico del mare parte da fine {MARINE_MIN_YEAR - 1} (verificato) — solo poche
         estati, non un trend decennale come per l'aria. Il layer NDWI sulla mappa non cambia aspetto
         tra un anno e l'altro: indica "c'è acqua", non la sua temperatura — il mare è acqua in ogni
@@ -200,16 +240,34 @@ function SeaCompare({ year, onYearChange }: YearCompareProps) {
   );
 }
 
-export default function LayerControls({ layer, onLayerChange, date, onDateChange, compareMode }: LayerControlsProps) {
+export default function LayerControls({
+  layer,
+  onLayerChange,
+  date,
+  onDateChange,
+  compareMode,
+  mapCenter,
+}: LayerControlsProps) {
   const minZoom = layerMinZoom(layer);
   const minYear = compareMode === "sea" ? MARINE_MIN_YEAR : HEAT_MIN_YEAR;
   const year = Math.min(Math.max(Number(date.slice(0, 4)) || CURRENT_YEAR, minYear), CURRENT_YEAR);
+  const [collapsed, setCollapsed] = useState(false);
 
   return (
     <div className="layer-controls">
-      <label className="layer-controls__label" htmlFor="layer-select">
-        Layer satellitare
-      </label>
+      <div className="layer-controls__header">
+        <label className="layer-controls__label" htmlFor="layer-select">
+          Layer satellitare
+        </label>
+        <button
+          type="button"
+          className="layer-controls__collapse"
+          onClick={() => setCollapsed((c) => !c)}
+          aria-label={collapsed ? "Espandi pannello layer" : "Riduci pannello layer"}
+        >
+          {collapsed ? "▸" : "▾"}
+        </button>
+      </div>
       <select
         id="layer-select"
         value={layer}
@@ -223,30 +281,34 @@ export default function LayerControls({ layer, onLayerChange, date, onDateChange
             </option>
           ))}
       </select>
-      {layer !== "none" &&
-        (compareMode === "heat" ? (
-          <YearCompare year={year} onYearChange={(y) => onDateChange(`${y}-07-15`)} />
-        ) : compareMode === "sea" ? (
-          <SeaCompare year={year} onYearChange={(y) => onDateChange(`${y}-07-15`)} />
-        ) : (
-          <>
-            <label className="layer-controls__label" htmlFor="layer-date">
-              Data (~2 giorni di latenza)
-            </label>
-            <input
-              id="layer-date"
-              type="date"
-              value={date}
-              max={todayMinus(2)}
-              onChange={(e) => onDateChange(e.target.value)}
-            />
-          </>
-        ))}
-      {minZoom != null && (
-        <p className="layer-controls__hint">Zoom su una città per vedere questo layer.</p>
-      )}
-      {layer === "landsat-thermal" && (
-        <p className="layer-controls__hint">Landsat passa ogni ~8-16 giorni: può restare vuoto se nuvoloso.</p>
+      {!collapsed && (
+        <>
+          {layer !== "none" &&
+            (compareMode === "heat" ? (
+              <YearCompare year={year} onYearChange={(y) => onDateChange(`${y}-07-15`)} />
+            ) : compareMode === "sea" ? (
+              <SeaCompare year={year} onYearChange={(y) => onDateChange(`${y}-07-15`)} mapCenter={mapCenter} />
+            ) : (
+              <>
+                <label className="layer-controls__label" htmlFor="layer-date">
+                  Data (~2 giorni di latenza)
+                </label>
+                <input
+                  id="layer-date"
+                  type="date"
+                  value={date}
+                  max={todayMinus(2)}
+                  onChange={(e) => onDateChange(e.target.value)}
+                />
+              </>
+            ))}
+          {minZoom != null && (
+            <p className="layer-controls__hint">Zoom su una città per vedere questo layer.</p>
+          )}
+          {layer === "landsat-thermal" && (
+            <p className="layer-controls__hint">Landsat passa ogni ~8-16 giorni: può restare vuoto se nuvoloso.</p>
+          )}
+        </>
       )}
     </div>
   );

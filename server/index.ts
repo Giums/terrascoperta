@@ -10,7 +10,7 @@
 // - /api/volcano-webcams: la pagina galleria INGV è HTML statico ma senza
 //   CORS — va letta e "spacchettata" qui, il browser non può leggerla da sé.
 import express from "express";
-import { canadairFleet } from "../src/data/canadair-fleet";
+import { canadairFleet, type AircraftType } from "../src/data/canadair-fleet";
 
 // In produzione le variabili vengono dal servizio (systemd/pm2), non da un
 // file: qui carichiamo .env.local solo se esiste, per lo sviluppo locale.
@@ -66,6 +66,7 @@ app.get("/api/sentinel-token", async (_req, res) => {
 interface CanadairPosition {
   icao24: string;
   registration: string;
+  type: AircraftType;
   callsign: string;
   lon: number;
   lat: number;
@@ -73,11 +74,45 @@ interface CanadairPosition {
   onGround: boolean;
   velocity: number | null;
   heading: number | null;
+  verticalRate: number | null;
   lastContact: number;
 }
 
 const CANADAIR_CACHE_MS = 90_000;
 let canadairCache: { aircraft: CanadairPosition[]; updatedAt: number } | null = null;
+
+// OAuth2 client_credentials, stesso schema del token Sentinel Hub sopra —
+// OpenSky non accetta più Basic Auth. Con un client registrato (gratuito) il
+// limite sale da 400 a 4000 crediti/giorno. Se le variabili non sono
+// configurate si resta anonimi: nessun errore, solo meno margine prima del 429.
+let openSkyToken: { value: string; expiresAt: number } | null = null;
+
+async function getOpenSkyToken(): Promise<string | null> {
+  const clientId = process.env.OPENSKY_CLIENT_ID;
+  const clientSecret = process.env.OPENSKY_CLIENT_SECRET;
+  if (!clientId || !clientSecret) return null;
+
+  if (openSkyToken && Date.now() < openSkyToken.expiresAt) return openSkyToken.value;
+
+  const response = await fetch(
+    "https://auth.opensky-network.org/auth/realms/opensky-network/protocol/openid-connect/token",
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        grant_type: "client_credentials",
+        client_id: clientId,
+        client_secret: clientSecret,
+      }),
+    },
+  );
+  if (!response.ok) return null;
+
+  const data = (await response.json()) as { access_token: string; expires_in: number };
+  // Margine di 60s sulla scadenza dichiarata, per non usare un token appena spirato.
+  openSkyToken = { value: data.access_token, expiresAt: Date.now() + (data.expires_in - 60) * 1000 };
+  return openSkyToken.value;
+}
 
 app.get("/api/canadair-positions", async (_req, res) => {
   if (canadairCache && Date.now() - canadairCache.updatedAt < CANADAIR_CACHE_MS) {
@@ -85,10 +120,13 @@ app.get("/api/canadair-positions", async (_req, res) => {
     return;
   }
 
-  const registrationByIcao = new Map(canadairFleet.map((a) => [a.icao24, a.registration]));
+  const fleetByIcao = new Map(canadairFleet.map((a) => [a.icao24, a]));
   const query = canadairFleet.map((a) => `icao24=${a.icao24}`).join("&");
+  const token = await getOpenSkyToken();
 
-  const response = await fetch(`https://opensky-network.org/api/states/all?${query}`);
+  const response = await fetch(`https://opensky-network.org/api/states/all?${query}`, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  });
   if (!response.ok) {
     res.status(502).json({ error: "OpenSky non ha risposto" });
     return;
@@ -98,7 +136,8 @@ app.get("/api/canadair-positions", async (_req, res) => {
   const aircraft: CanadairPosition[] = (data.states ?? [])
     .map((s) => ({
       icao24: s[0] as string,
-      registration: registrationByIcao.get(s[0] as string) ?? (s[0] as string),
+      registration: fleetByIcao.get(s[0] as string)?.registration ?? (s[0] as string),
+      type: fleetByIcao.get(s[0] as string)?.type ?? "canadair",
       callsign: ((s[1] as string) ?? "").trim(),
       lastContact: s[4] as number,
       lon: s[5] as number,
@@ -107,12 +146,63 @@ app.get("/api/canadair-positions", async (_req, res) => {
       onGround: s[8] as boolean,
       velocity: s[9] as number | null,
       heading: s[10] as number | null,
+      verticalRate: s[11] as number | null,
     }))
     .filter((a) => a.lat != null && a.lon != null);
 
   canadairCache = { aircraft, updatedAt: Date.now() };
   res.set("Cache-Control", "public, max-age=90");
   res.json(canadairCache);
+});
+
+interface TrackPoint {
+  time: number;
+  lat: number;
+  lng: number;
+}
+
+const TRACK_CACHE_MS = 60_000;
+const trackCache = new Map<string, { path: TrackPoint[]; updatedAt: number }>();
+
+// /tracks richiede sempre un client autenticato (a differenza di /states/all,
+// qui l'accesso anonimo non è previsto affatto) — senza credenziali OpenSky
+// configurate l'endpoint risponde 503, non un errore silenzioso.
+app.get("/api/canadair-track/:icao24", async (req, res) => {
+  const icao24 = req.params.icao24.toLowerCase();
+  if (!canadairFleet.some((a) => a.icao24 === icao24)) {
+    res.status(404).json({ error: "Velivolo non in flotta" });
+    return;
+  }
+
+  const cached = trackCache.get(icao24);
+  if (cached && Date.now() - cached.updatedAt < TRACK_CACHE_MS) {
+    res.json(cached);
+    return;
+  }
+
+  const token = await getOpenSkyToken();
+  if (!token) {
+    res.status(503).json({ error: "Traccia volo non disponibile: OpenSky non autenticato su questo deployment" });
+    return;
+  }
+
+  const response = await fetch(`https://opensky-network.org/api/tracks/all?icao24=${icao24}&time=0`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!response.ok) {
+    res.status(502).json({ error: "OpenSky non ha risposto" });
+    return;
+  }
+
+  const data = (await response.json()) as { path: [number, number | null, number | null, ...unknown[]][] | null };
+  const path: TrackPoint[] = (data.path ?? [])
+    .filter((p) => p[1] != null && p[2] != null)
+    .map((p) => ({ time: p[0], lat: p[1] as number, lng: p[2] as number }));
+
+  const result = { path, updatedAt: Date.now() };
+  trackCache.set(icao24, result);
+  res.set("Cache-Control", "public, max-age=60");
+  res.json(result);
 });
 
 interface WildfireHotspot {

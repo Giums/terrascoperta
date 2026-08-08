@@ -2,6 +2,7 @@ import type { EarthquakeEvent } from "../../hooks/useItalyEarthquakes";
 import { DAYS_BACK } from "../../hooks/useItalyEarthquakes";
 import { nearestCity } from "../../utils/geo";
 import { cities } from "../../data/cities";
+import EarthquakeSafetyInfo from "./EarthquakeSafetyInfo";
 import "../Info/InfoPanel.css";
 
 interface EarthquakeDetailProps {
@@ -45,6 +46,8 @@ export default function EarthquakeDetail({ event, onClose }: EarthquakeDetailPro
           ×
         </button>
       </div>
+
+      <EarthquakeSafetyInfo />
 
       <section className="info-panel__section">
         <h3>Dati evento</h3>

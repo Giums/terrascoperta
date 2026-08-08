@@ -14,6 +14,7 @@ import AddressMarker from "./components/Map/AddressMarker";
 import FlyTo, { type FlyTarget } from "./components/Map/FlyTo";
 import SatelliteOverlay, { type SatelliteLayerId } from "./components/Map/SatelliteOverlay";
 import SatelliteLoadingIndicator from "./components/Map/SatelliteLoadingIndicator";
+import MapCenterTracker from "./components/Map/MapCenterTracker";
 import LayerControls from "./components/Map/LayerControls";
 import UnifiedSearch from "./components/Search/UnifiedSearch";
 import CityDetail from "./components/Detail/CityDetail";
@@ -21,6 +22,7 @@ import AddressDetail from "./components/Detail/AddressDetail";
 import WaterBodyDetail from "./components/Detail/WaterBodyDetail";
 import VolcanoDetail from "./components/Detail/VolcanoDetail";
 import FireDetail from "./components/Detail/FireDetail";
+import HotspotDetail from "./components/Detail/HotspotDetail";
 import DesertificationDetail from "./components/Detail/DesertificationDetail";
 import HydroRiskDetail from "./components/Detail/HydroRiskDetail";
 import EarthquakeDetail from "./components/Detail/EarthquakeDetail";
@@ -41,7 +43,7 @@ import { sentinelHubAvailable } from "./utils/satellite-layers";
 import { haversineKm } from "./utils/geo";
 import type { AddressResult } from "./utils/geocode";
 import { useCanadairPositions } from "./hooks/useCanadairPositions";
-import { useWildfireHotspots } from "./hooks/useWildfireHotspots";
+import { useWildfireHotspots, type WildfireHotspot } from "./hooks/useWildfireHotspots";
 import { useItalyEarthquakes, type EarthquakeEvent } from "./hooks/useItalyEarthquakes";
 import "./App.css";
 
@@ -119,13 +121,17 @@ function App() {
   const [selectedWaterBody, setSelectedWaterBody] = useState<WaterBody | null>(null);
   const [selectedVolcano, setSelectedVolcano] = useState<Volcano | null>(null);
   const [selectedFire, setSelectedFire] = useState<FireEvent | null>(null);
+  const [selectedHotspot, setSelectedHotspot] = useState<WildfireHotspot | null>(null);
   const [selectedZone, setSelectedZone] = useState<DesertificationZone | null>(null);
   const [selectedHydroCase, setSelectedHydroCase] = useState<HydroRiskCase | null>(null);
   const [selectedEarthquake, setSelectedEarthquake] = useState<EarthquakeEvent | null>(null);
   const [flyTarget, setFlyTarget] = useState<FlyTarget | null>(null);
-  const { aircraft: canadairAircraft } = useCanadairPositions();
-  const { hotspots: wildfireHotspots } = useWildfireHotspots();
-  const { events: earthquakes } = useItalyEarthquakes();
+  // Ogni hook interroga in polling anche in background: attivarli solo quando
+  // servono davvero evita richieste + re-render dell'intero albero (mappa
+  // inclusa) mentre l'utente sta su una scheda che non li usa.
+  const { aircraft: canadairAircraft } = useCanadairPositions(module === "incendi");
+  const { hotspots: wildfireHotspots } = useWildfireHotspots(module === "incendi" || module === "vulcani");
+  const { events: earthquakes } = useItalyEarthquakes(module === "terremoti");
   // Il satellite VIIRS rileva qualsiasi fonte di calore intenso, quindi lava e
   // crateri attivi finiscono negli stessi dati dei roghi — li separiamo per
   // distanza dal vulcano più vicino: entro il raggio è "vulcano attivo", oltre
@@ -148,6 +154,10 @@ function App() {
   // LST): il calore va visto, non scoperto in un menu.
   const [layer, setLayer] = useState<SatelliteLayerId>(MODULES[0].defaultLayer);
   const [date, setDate] = useState(defaultLayerDate());
+  // Centro mappa corrente: usato solo da LayerControls (compareMode "sea") per
+  // mostrare la zona di mare più vicina a dove sta guardando l'utente. Default
+  // = centro Italia, stesso di ITALY_CENTER in MapContainer.tsx.
+  const [mapCenter, setMapCenter] = useState({ lat: 42.5, lng: 12.5 });
 
   function clearSelection() {
     setShowInfo(false);
@@ -156,6 +166,7 @@ function App() {
     setSelectedWaterBody(null);
     setSelectedVolcano(null);
     setSelectedFire(null);
+    setSelectedHotspot(null);
     setSelectedZone(null);
     setSelectedHydroCase(null);
     setSelectedEarthquake(null);
@@ -197,6 +208,11 @@ function App() {
     setSelectedFire(fire);
   }
 
+  function selectHotspot(hotspot: WildfireHotspot) {
+    clearSelection();
+    setSelectedHotspot(hotspot);
+  }
+
   function selectZone(zone: DesertificationZone) {
     clearSelection();
     setSelectedZone(zone);
@@ -231,6 +247,8 @@ function App() {
     />
   ) : selectedFire ? (
     <FireDetail fire={selectedFire} onClose={() => setSelectedFire(null)} />
+  ) : selectedHotspot ? (
+    <HotspotDetail hotspot={selectedHotspot} onClose={() => setSelectedHotspot(null)} />
   ) : selectedZone ? (
     <DesertificationDetail zone={selectedZone} onClose={() => setSelectedZone(null)} />
   ) : selectedHydroCase ? (
@@ -285,6 +303,7 @@ function App() {
           <MapView>
             <SatelliteOverlay layer={layer} date={date} />
             <SatelliteLoadingIndicator />
+            <MapCenterTracker onChange={setMapCenter} />
             {module === "calore" && <CityMarkers cities={cities} onSelect={selectCity} />}
             {module === "acqua" && <WaterBodyMarkers waterBodies={waterBodies} onSelect={selectWaterBody} />}
             {module === "vulcani" && (
@@ -292,7 +311,7 @@ function App() {
             )}
             {module === "incendi" && (
               <>
-                <WildfireHotspotMarkers hotspots={nonVolcanicHotspots} />
+                <WildfireHotspotMarkers hotspots={nonVolcanicHotspots} onSelect={selectHotspot} />
                 <FireMarkers fires={fires} onSelect={selectFire} />
                 <CanadairMarkers aircraft={canadairAircraft} />
               </>
@@ -315,6 +334,7 @@ function App() {
             date={date}
             onDateChange={setDate}
             compareMode={module === "calore" ? "heat" : module === "acqua" ? "sea" : "none"}
+            mapCenter={mapCenter}
           />
         </>
       }

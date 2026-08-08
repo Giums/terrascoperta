@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
+import type { AircraftType } from "../data/canadair-fleet";
 
 export interface CanadairPosition {
   icao24: string;
   registration: string;
+  type: AircraftType;
   callsign: string;
   lon: number;
   lat: number;
@@ -10,6 +12,7 @@ export interface CanadairPosition {
   onGround: boolean;
   velocity: number | null;
   heading: number | null;
+  verticalRate: number | null;
   lastContact: number;
 }
 
@@ -27,10 +30,14 @@ const POLL_INTERVAL_MS = 60_000;
  * chiamata diretta dal browser). Se il backend non risponde, `error` si
  * popola e la lista resta vuota — nessun aereo mostrato, non un errore visivo.
  */
-export function useCanadairPositions(): CanadairState {
-  const [state, setState] = useState<CanadairState>({ aircraft: [], loading: true, error: null });
+export function useCanadairPositions(enabled = true): CanadairState {
+  const [state, setState] = useState<CanadairState>({ aircraft: [], loading: enabled, error: null });
 
   useEffect(() => {
+    if (!enabled) {
+      setState({ aircraft: [], loading: false, error: null });
+      return;
+    }
     let cancelled = false;
 
     function fetchPositions() {
@@ -52,7 +59,7 @@ export function useCanadairPositions(): CanadairState {
       cancelled = true;
       clearInterval(interval);
     };
-  }, []);
+  }, [enabled]);
 
   return state;
 }

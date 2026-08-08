@@ -24,10 +24,14 @@ const POLL_INTERVAL_MS = 10 * 60_000;
  * personale non deve stare nel bundle frontend). Non è una lista di incendi
  * confermati: il satellite rileva qualsiasi fonte di calore intenso.
  */
-export function useWildfireHotspots(): WildfireState {
-  const [state, setState] = useState<WildfireState>({ hotspots: [], loading: true, error: null });
+export function useWildfireHotspots(enabled = true): WildfireState {
+  const [state, setState] = useState<WildfireState>({ hotspots: [], loading: enabled, error: null });
 
   useEffect(() => {
+    if (!enabled) {
+      setState({ hotspots: [], loading: false, error: null });
+      return;
+    }
     let cancelled = false;
 
     function fetchHotspots() {
@@ -49,7 +53,7 @@ export function useWildfireHotspots(): WildfireState {
       cancelled = true;
       clearInterval(interval);
     };
-  }, []);
+  }, [enabled]);
 
   return state;
 }

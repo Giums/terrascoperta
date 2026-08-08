@@ -3,11 +3,12 @@ import type { WildfireHotspot } from "../../hooks/useWildfireHotspots";
 
 interface WildfireHotspotMarkersProps {
   hotspots: WildfireHotspot[];
+  onSelect: (hotspot: WildfireHotspot) => void;
 }
 
 const CONFIDENCE_LABEL: Record<string, string> = { l: "bassa", n: "nominale", h: "alta" };
 
-export default function WildfireHotspotMarkers({ hotspots }: WildfireHotspotMarkersProps) {
+export default function WildfireHotspotMarkers({ hotspots, onSelect }: WildfireHotspotMarkersProps) {
   return (
     <>
       {hotspots.map((h, i) => (
@@ -18,6 +19,7 @@ export default function WildfireHotspotMarkers({ hotspots }: WildfireHotspotMark
           size={10}
           color="#f59e0b"
           fillOpacity={0.7}
+          onClick={() => onSelect(h)}
           tooltip={
             <>
               <strong>Focolaio rilevato</strong>
