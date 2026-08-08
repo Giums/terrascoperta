@@ -80,6 +80,26 @@ export default function VolcanoDetail({ volcano, frp, onClose }: VolcanoDetailPr
         </p>
       </section>
 
+      {volcano.name === "Etna" && (
+        <section className="info-panel__section">
+          <h3>Aeroporto di Catania e cenere vulcanica</h3>
+          <p>
+            L'aeroporto di Catania-Fontanarossa (a ~15km dal cratere) chiude spesso gli arrivi, a volte
+            del tutto, quando l'attività eruttiva emette cenere sopra lo scalo  è successo più volte
+            nel 2025 e nel 2026. Non ho trovato un'API pubblica per lo stato in tempo reale. Controlla lo stato attuale direttamente:
+          </p>
+          <p>
+            <a href="https://www.aeroporto.catania.it/tracking-voli/arrivi" target="_blank" rel="noreferrer">
+              Stato voli aeroporto Catania ↗
+            </a>
+            <br />
+            <a href="https://www.ct.ingv.it/" target="_blank" rel="noreferrer">
+              Bollettini INGV Osservatorio Etneo ↗
+            </a>
+          </p>
+        </section>
+      )}
+
       {(trueColorUrl || swirUrl) && (
         <section className="info-panel__section">
           <h3>Immagini satellitari recenti</h3>
