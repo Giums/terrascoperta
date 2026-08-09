@@ -3,6 +3,7 @@ import { DAYS_BACK } from "../../hooks/useItalyEarthquakes";
 import { nearestCity } from "../../utils/geo";
 import { cities } from "../../data/cities";
 import EarthquakeSafetyInfo from "./EarthquakeSafetyInfo";
+import EmsActivationNote from "./EmsActivationNote";
 import "../Info/InfoPanel.css";
 
 interface EarthquakeDetailProps {
@@ -48,6 +49,8 @@ export default function EarthquakeDetail({ event, onClose }: EarthquakeDetailPro
       </div>
 
       <EarthquakeSafetyInfo />
+
+      <EmsActivationNote lat={event.lat} lng={event.lng} categories={["earthquake"]} />
 
       <section className="info-panel__section">
         <h3>Dati evento</h3>

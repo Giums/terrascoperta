@@ -1,5 +1,6 @@
 import type { FireEvent } from "../../data/fires";
 import FireSafetyInfo from "./FireSafetyInfo";
+import EmsActivationNote from "./EmsActivationNote";
 import "../Info/InfoPanel.css";
 
 interface FireDetailProps {
@@ -31,6 +32,8 @@ export default function FireDetail({ fire, onClose }: FireDetailProps) {
       </section>
 
       <FireSafetyInfo />
+
+      <EmsActivationNote lat={fire.lat} lng={fire.lng} categories={["fire"]} />
 
       <section className="info-panel__section">
         <h3>Come il satellite vede la cicatrice</h3>

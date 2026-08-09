@@ -332,6 +332,81 @@ app.get("/api/volcano-webcams/:volcano", async (req, res) => {
   res.json(result);
 });
 
+interface EmsActivation {
+  code: string;
+  name: string;
+  category: string;
+  categorySlug: string;
+  countries: string[];
+  lat: number;
+  lng: number;
+  activationTime: string;
+}
+
+const EMS_CACHE_MS = 15 * 60_000;
+let emsCache: { activations: EmsActivation[]; updatedAt: number } | null = null;
+
+// Copernicus EMS Rapid Mapping si attiva solo per emergenze dichiarate (non è
+// un layer sempre acceso) — qui prendiamo solo le attivazioni aperte
+// (closed=false, poche decine nel mondo) e lasciamo al frontend calcolare la
+// distanza dal punto che sta guardando. Nessun filtro geografico lato API
+// verificato funzionante (il parametro ?country= viene ignorato in silenzio),
+// quindi il filtro per l'Italia è tutto client-side via haversine.
+app.get("/api/ems-activations", async (_req, res) => {
+  if (emsCache && Date.now() - emsCache.updatedAt < EMS_CACHE_MS) {
+    res.json(emsCache);
+    return;
+  }
+
+  const response = await fetch(
+    "https://mapping.emergency.copernicus.eu/activations/api/activations/?closed=false&limit=200",
+  );
+  if (!response.ok) {
+    res.status(502).json({ error: "Copernicus EMS non ha risposto" });
+    return;
+  }
+
+  const data = (await response.json()) as {
+    results: {
+      code: string;
+      name: string;
+      category?: { name?: string; slug?: string };
+      countries?: { short_name?: string }[];
+      centroid: string;
+      activationTime: string;
+      drmPhase?: string;
+    }[];
+  };
+
+  const activations: EmsActivation[] = data.results
+    // drmPhase "response" = emergenza acuta appena successa. "preparedness"
+    // (piani di rischio pluriennali) e "recovery" (valutazioni post-evento)
+    // possono restare aperti per mesi — mostrarli come "in corso qui vicino"
+    // sarebbe fuorviante (verificato: EMSN235 Sardegna, preparedness da aprile,
+    // sembrava un'emergenza di oggi ma è un progetto di pianificazione).
+    .filter((r) => r.drmPhase === "response")
+    .map((r) => {
+      // centroid arriva come WKT "POINT (lon lat)".
+      const match = /POINT \(([-\d.]+) ([-\d.]+)\)/.exec(r.centroid);
+      if (!match) return null;
+      return {
+        code: r.code,
+        name: r.name,
+        category: r.category?.name ?? "",
+        categorySlug: r.category?.slug ?? "",
+        countries: (r.countries ?? []).map((c) => c.short_name ?? "").filter(Boolean),
+        lng: Number(match[1]),
+        lat: Number(match[2]),
+        activationTime: r.activationTime,
+      };
+    })
+    .filter((a): a is EmsActivation => a != null);
+
+  emsCache = { activations, updatedAt: Date.now() };
+  res.set("Cache-Control", "public, max-age=900");
+  res.json(emsCache);
+});
+
 app.listen(PORT, () => {
   console.log(`API server in ascolto su :${PORT}`);
 });

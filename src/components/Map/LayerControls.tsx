@@ -26,6 +26,9 @@ const SENTINEL_OPTIONS: { id: SatelliteLayerId; label: string }[] = [
   { id: "s2-nbr", label: "Cicatrici da incendio — NBR (Sentinel-2, 10m)" },
   { id: "s3-lst", label: "Temperatura superficie reale — LST (Sentinel-3, ~1km)" },
   { id: "landsat-thermal", label: "Temperatura superficie (Landsat, ~30-100m) — copertura non garantita" },
+  { id: "s5p-so2", label: "SO₂ atmosferico — pennacchi vulcanici (Sentinel-5P, ~7km)" },
+  { id: "s5p-aer-ai", label: "Indice aerosol — cenere/fumo in quota (Sentinel-5P, ~7km)" },
+  { id: "s1-backscatter", label: "Radar SAR — vede sotto le nuvole (Sentinel-1, 10-20m)" },
 ];
 
 // Cinque città sparse per l'Italia (Nord/Centro/Sud/Sicilia) per una media
@@ -307,6 +310,14 @@ export default function LayerControls({
           )}
           {layer === "landsat-thermal" && (
             <p className="layer-controls__hint">Landsat passa ogni ~8-16 giorni: può restare vuoto se nuvoloso.</p>
+          )}
+          {(layer === "s5p-so2" || layer === "s5p-aer-ai") && (
+            <p className="layer-controls__hint">
+              Pixel molto grosso (~7km): indica "c'è un pennacchio da queste parti", non il suo confine esatto.
+            </p>
+          )}
+          {layer === "s1-backscatter" && (
+            <p className="layer-controls__hint">Radar, non foto: penetra le nuvole ma l'immagine è in scala di grigi.</p>
           )}
         </>
       )}

@@ -3,6 +3,7 @@ import { useSeismicity } from "../../hooks/useSeismicity";
 import { useVolcanoWebcams } from "../../hooks/useVolcanoWebcams";
 import { staticSnapshotUrl } from "../../utils/satellite-layers";
 import { activityLabel } from "../../utils/volcano-activity";
+import EmsActivationNote from "./EmsActivationNote";
 import "../Info/InfoPanel.css";
 
 interface VolcanoDetailProps {
@@ -41,6 +42,17 @@ export default function VolcanoDetail({ volcano, frp, onClose }: VolcanoDetailPr
   const snapshotDate = todayMinus(2);
   const trueColorUrl = staticSnapshotUrl("s2-true-color", bbox, snapshotDate);
   const swirUrl = staticSnapshotUrl("s2-swir", bbox, snapshotDate);
+  // Bbox più ampio per SO2/aerosol: pixel S5P ~7x3.5km, un margine di 15-17km
+  // come per l'ottico mostrerebbe solo 2-3 pixel — qui serve vedere il pennacchio
+  // anche se si allontana dal cratere.
+  const plumeBbox = {
+    minLat: volcano.lat - SNAPSHOT_MARGIN_DEG * 4,
+    maxLat: volcano.lat + SNAPSHOT_MARGIN_DEG * 4,
+    minLng: volcano.lng - SNAPSHOT_MARGIN_DEG * 4,
+    maxLng: volcano.lng + SNAPSHOT_MARGIN_DEG * 4,
+  };
+  const so2Url = staticSnapshotUrl("s5p-so2", plumeBbox, snapshotDate);
+  const aerUrl = staticSnapshotUrl("s5p-aer-ai", plumeBbox, snapshotDate);
 
   return (
     <div className="info-panel">
@@ -67,6 +79,8 @@ export default function VolcanoDetail({ volcano, frp, onClose }: VolcanoDetailPr
           </p>
         </section>
       )}
+
+      <EmsActivationNote lat={volcano.lat} lng={volcano.lng} categories={["volcan"]} />
 
       <section className="info-panel__section">
         <h3>Stato</h3>
@@ -96,6 +110,10 @@ export default function VolcanoDetail({ volcano, frp, onClose }: VolcanoDetailPr
             <a href="https://www.ct.ingv.it/" target="_blank" rel="noreferrer">
               Bollettini INGV Osservatorio Etneo ↗
             </a>
+            <br />
+            <a href="https://atmosphere.copernicus.eu/eruptive-emissions" target="_blank" rel="noreferrer">
+              Previsioni dispersione SO₂/cenere — CAMS (Copernicus) ↗
+            </a>
           </p>
         </section>
       )}
@@ -122,6 +140,33 @@ export default function VolcanoDetail({ volcano, frp, onClose }: VolcanoDetailPr
             nuvoloso in tutto questo periodo, l'immagine può risultare in gran parte bianca/coperta —
             limite reale dell'ottico, non un errore. Le stesse immagini, navigabili, sono nel layer
             satellitare del selettore mappa.
+          </p>
+        </section>
+      )}
+
+      {(so2Url || aerUrl) && (
+        <section className="info-panel__section">
+          <h3>Dove va il pennacchio — SO₂ e aerosol</h3>
+          <div className="volcano-detail__snapshots">
+            {so2Url && (
+              <figure>
+                <img src={so2Url} alt={`${volcano.name}, colonna totale di SO2, ultimo passaggio Sentinel-5P`} loading="lazy" />
+                <figcaption>SO₂ (anidride solforosa)</figcaption>
+              </figure>
+            )}
+            {aerUrl && (
+              <figure>
+                <img src={aerUrl} alt={`${volcano.name}, indice aerosol, ultimo passaggio Sentinel-5P`} loading="lazy" />
+                <figcaption>Indice aerosol (cenere/fumo in quota)</figcaption>
+              </figure>
+            )}
+          </div>
+          <p>
+            Sentinel-5P/TROPOMI, ultimo passaggio disponibile (non un composito multi-giorno: un
+            pennacchio si sposta in ore). Pixel molto grosso (~7x3.5km) — indica "c'è un pennacchio
+            da queste parti e va in questa direzione", non un confine preciso. Se non c'è attività
+            eruttiva l'immagine può risultare vuota o piatta: è normale, non un errore. Per una
+            previsione oraria di dove andrà nelle prossime ore, vedi il link CAMS qui sopra.
           </p>
         </section>
       )}

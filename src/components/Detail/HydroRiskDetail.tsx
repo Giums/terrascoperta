@@ -1,5 +1,6 @@
 import type { HydroRiskCase } from "../../data/hydro-risk";
 import HydroRiskSafetyInfo from "./HydroRiskSafetyInfo";
+import EmsActivationNote from "./EmsActivationNote";
 import "../Info/InfoPanel.css";
 
 interface HydroRiskDetailProps {
@@ -30,6 +31,8 @@ export default function HydroRiskDetail({ item, onClose }: HydroRiskDetailProps)
 
       <HydroRiskSafetyInfo />
 
+      <EmsActivationNote lat={item.lat} lng={item.lng} categories={["flood", "mass"]} />
+
       <section className="info-panel__section">
         <h3>Perché gli alberi contano</h3>
         <p>
@@ -55,6 +58,23 @@ export default function HydroRiskDetail({ item, onClose }: HydroRiskDetailProps)
           Qui non si dice dove cadrà la prossima frana. Si mostra che gli eventi alluvionali registrati
           sono più frequenti e più intensi rispetto al passato, specialmente dove la vegetazione è stata
           persa di recente per incendio o desertificazione.
+        </p>
+      </section>
+
+      <section className="info-panel__section">
+        <h3>Subsidenza del terreno</h3>
+        <p>
+          Per il movimento verticale del suolo (subsidenza, utile per capire dove il terreno sta
+          cedendo prima di una frana) la fonte corretta è l'EGMS (European Ground Motion Service,
+          Copernicus) — misura da satellite Sentinel-1 già elaborata, non qualcosa che si può
+          ricalcolare al volo. Non ho trovato un WMS pubblico anonimo con nomi di layer stabili da
+          incorporare direttamente in questa mappa (verificato, il portale è un visualizzatore proprio,
+          non un semplice endpoint WMS) — consulta il punto esatto direttamente sul portale:
+        </p>
+        <p>
+          <a href="https://egms.land.copernicus.eu/" target="_blank" rel="noreferrer">
+            Portale EGMS — movimento del suolo ↗
+          </a>
         </p>
       </section>
 

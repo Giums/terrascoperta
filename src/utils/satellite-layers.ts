@@ -6,20 +6,41 @@ export type SatelliteLayerId =
   | "s2-swir"
   | "s2-nbr"
   | "s3-lst"
-  | "landsat-thermal";
+  | "landsat-thermal"
+  | "s5p-so2"
+  | "s5p-aer-ai"
+  | "s1-backscatter";
 
 const SENTINEL_INSTANCE_S2 = import.meta.env.VITE_SENTINEL_INSTANCE_ID_S2 as string | undefined;
 const SENTINEL_INSTANCE_S3 = import.meta.env.VITE_SENTINEL_INSTANCE_ID_S3 as string | undefined;
 const SENTINEL_INSTANCE_S3_LST = import.meta.env.VITE_SENTINEL_INSTANCE_ID_S3_LST as string | undefined;
 const SENTINEL_INSTANCE_LANDSAT = import.meta.env.VITE_SENTINEL_INSTANCE_ID_LANDSAT as string | undefined;
+const SENTINEL_INSTANCE_S5P_SO2 = import.meta.env.VITE_SENTINEL_INSTANCE_ID_S5P_SO2 as string | undefined;
+const SENTINEL_INSTANCE_S5P_AER = import.meta.env.VITE_SENTINEL_INSTANCE_ID_S5P_AER as string | undefined;
+const SENTINEL_INSTANCE_S1 = import.meta.env.VITE_SENTINEL_INSTANCE_ID_S1 as string | undefined;
 
 /** true se almeno una Configuration Sentinel Hub è disponibile in questo deployment. */
 export const sentinelHubAvailable = Boolean(
-  SENTINEL_INSTANCE_S2 || SENTINEL_INSTANCE_S3 || SENTINEL_INSTANCE_S3_LST || SENTINEL_INSTANCE_LANDSAT,
+  SENTINEL_INSTANCE_S2 ||
+    SENTINEL_INSTANCE_S3 ||
+    SENTINEL_INSTANCE_S3_LST ||
+    SENTINEL_INSTANCE_LANDSAT ||
+    SENTINEL_INSTANCE_S5P_SO2 ||
+    SENTINEL_INSTANCE_S5P_AER ||
+    SENTINEL_INSTANCE_S1,
 );
 
 export const SENTINEL_LAYERS: Record<
-  "s2-true-color" | "s2-ndvi" | "s2-ndwi" | "s2-swir" | "s2-nbr" | "s3-lst" | "landsat-thermal",
+  | "s2-true-color"
+  | "s2-ndvi"
+  | "s2-ndwi"
+  | "s2-swir"
+  | "s2-nbr"
+  | "s3-lst"
+  | "landsat-thermal"
+  | "s5p-so2"
+  | "s5p-aer-ai"
+  | "s1-backscatter",
   { instance?: string; name: string; minZoom?: number; lookbackDays: number }
 > = {
   // La collection S2L2A rifiuta richieste WMS oltre 1500 m/pixel. Con tile a
@@ -53,6 +74,25 @@ export const SENTINEL_LAYERS: Record<
   // quindi la probabilità di trovare un passaggio sereno è più bassa. Verificato che
   // NON è un problema di cache/URL: bbox mai richieste prima danno lo stesso esito.
   "landsat-thermal": { instance: SENTINEL_INSTANCE_LANDSAT, name: "9_THERMAL", minZoom: 6, lookbackDays: 45 },
+  // Sentinel-5P/TROPOMI, SO2 e Aerosol Index — utili per vedere un pennacchio
+  // vulcanico (o di altra origine), non per confini precisi: pixel ~7x3.5km,
+  // molto più grosso di S2. La Configuration va creata con mosaicking "most
+  // recent" (non "least cloud coverage" come S2): un pennacchio si sposta in
+  // ore, un composito multi-giorno lo mediarebbe fino a farlo sparire.
+  // lookbackDays corto per lo stesso motivo — non c'entra la copertura nuvolosa.
+  "s5p-so2": { instance: SENTINEL_INSTANCE_S5P_SO2, name: "SO2", lookbackDays: 2 },
+  // Coppia 340/380nm (non 354/388, variante meno standard) — è quella del
+  // prodotto ufficiale Copernicus "UV Aerosol Index".
+  // ID col trattino, non underscore — è quello che risulta configurato con
+  // l'evalscript corretto (verificato dal vivo, il gemello "AER_AI_340_380"
+  // con underscore è un duplicato rimasto sull'evalscript raw non fixato).
+  "s5p-aer-ai": { instance: SENTINEL_INSTANCE_S5P_AER, name: "AER-AI-340-AND-380", lookbackDays: 2 },
+  // Sentinel-1 SAR, backscatter VV grezzo — non ottico, quindi vede sotto le
+  // nuvole: utile per alluvioni quando NDWI (S2) è cieco per copertura
+  // nuvolosa. NON è InSAR: un solo passaggio non misura movimento del suolo
+  // (serve differenza di fase multi-temporale, fuori scope per una semplice
+  // Configuration WMS) — per la subsidenza vera vedi EGMS, non questo layer.
+  "s1-backscatter": { instance: SENTINEL_INSTANCE_S1, name: "VV_BACKSCATTER", minZoom: 6, lookbackDays: 6 },
 };
 
 /** Zoom minimo richiesto perché il layer selezionato mostri dati (undefined = nessun limite). */
@@ -66,7 +106,7 @@ export function layerMinZoom(layer: SatelliteLayerId): number | undefined {
  * dettaglio (es. foto recente di un vulcano), non per la mappa principale.
  */
 export function staticSnapshotUrl(
-  layer: "s2-true-color" | "s2-swir",
+  layer: "s2-true-color" | "s2-swir" | "s5p-so2" | "s5p-aer-ai",
   bbox: { minLat: number; minLng: number; maxLat: number; maxLng: number },
   date: string,
   width = 400,

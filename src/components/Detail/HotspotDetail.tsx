@@ -1,5 +1,6 @@
 import type { WildfireHotspot } from "../../hooks/useWildfireHotspots";
 import FireSafetyInfo from "./FireSafetyInfo";
+import EmsActivationNote from "./EmsActivationNote";
 import "../Info/InfoPanel.css";
 
 interface HotspotDetailProps {
@@ -36,6 +37,8 @@ export default function HotspotDetail({ hotspot, onClose }: HotspotDetailProps) 
       </section>
 
       <FireSafetyInfo />
+
+      <EmsActivationNote lat={hotspot.lat} lng={hotspot.lon} categories={["fire"]} />
     </div>
   );
 }
