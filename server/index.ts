@@ -9,6 +9,10 @@
 //   non deve stare nel bundle frontend (abuso di quota se scrapata).
 // - /api/volcano-webcams: la pagina galleria INGV è HTML statico ma senza
 //   CORS — va letta e "spacchettata" qui, il browser non può leggerla da sé.
+// - /api/satellite-tile: proxy verso Sentinel Hub WMS con cache in-memory —
+//   Sentinel Hub non ha bisogno di questo (accetterebbe richieste dirette dal
+//   browser), ma senza passare da qui non c'è modo di mettere in cache le
+//   tile ripetute e ogni vista resta lenta quanto la prima volta.
 import express from "express";
 import { canadairFleet, type AircraftType } from "../src/data/canadair-fleet";
 
@@ -405,6 +409,64 @@ app.get("/api/ems-activations", async (_req, res) => {
   emsCache = { activations, updatedAt: Date.now() };
   res.set("Cache-Control", "public, max-age=900");
   res.json(emsCache);
+});
+
+interface TileCacheEntry {
+  buffer: Buffer;
+  contentType: string;
+  updatedAt: number;
+}
+
+// Sentinel Hub ricalcola ogni tile al volo (1-3.5s misurati con richieste
+// dirette, peggio sotto carico) — non c'è nulla di sbagliato nel nostro
+// codice, è il costo del mosaicking/mascheratura nuvole/evalscript fatto on
+// demand. Una cache in-memory qui (non Redis: un solo processo Node, nessun
+// bisogno di condividerla tra più server — vedi le altre cache sopra, stesso
+// pattern) trasforma le viste ripetute (stessa combinazione layer+bbox+data,
+// che capita spessissimo: stesso zoom di default, stessa città popolare) da
+// 1-3.5s a un fetch quasi istantaneo. La prima richiesta di una vista mai
+// vista prima resta comunque lenta — non è magia, solo niente ricalcolo
+// per chi arriva dopo.
+const SATELLITE_TILE_CACHE_MS = 12 * 60 * 60_000;
+// Tile ~50-300KB l'una: 2000 voci sono qualche centinaio di MB nel caso
+// peggiore, ragionevole per un processo Node su un server personale.
+const SATELLITE_TILE_CACHE_MAX = 2000;
+const satelliteTileCache = new Map<string, TileCacheEntry>();
+
+app.get("/api/satellite-tile/:instance", async (req, res) => {
+  const { instance } = req.params;
+  const queryString = req.url.split("?")[1] ?? "";
+  const cacheKey = `${instance}?${queryString}`;
+
+  const cached = satelliteTileCache.get(cacheKey);
+  if (cached && Date.now() - cached.updatedAt < SATELLITE_TILE_CACHE_MS) {
+    res.set("Content-Type", cached.contentType);
+    res.set("X-Tile-Cache", "HIT");
+    res.send(cached.buffer);
+    return;
+  }
+
+  const response = await fetch(`https://sh.dataspace.copernicus.eu/ogc/wms/${instance}?${queryString}`);
+  if (!response.ok) {
+    res.status(502).json({ error: "Sentinel Hub non ha risposto" });
+    return;
+  }
+
+  const buffer = Buffer.from(await response.arrayBuffer());
+  const contentType = response.headers.get("content-type") ?? "image/png";
+
+  // Map preserva l'ordine di inserimento: il primo elemento è anche il più
+  // vecchio, eviction FIFO gratis senza bisogno di tracciare timestamp a parte.
+  if (satelliteTileCache.size >= SATELLITE_TILE_CACHE_MAX) {
+    const oldestKey = satelliteTileCache.keys().next().value;
+    if (oldestKey) satelliteTileCache.delete(oldestKey);
+  }
+  satelliteTileCache.set(cacheKey, { buffer, contentType, updatedAt: Date.now() });
+
+  res.set("Content-Type", contentType);
+  res.set("Cache-Control", "public, max-age=3600");
+  res.set("X-Tile-Cache", "MISS");
+  res.send(buffer);
 });
 
 app.listen(PORT, () => {

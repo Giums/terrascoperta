@@ -4,34 +4,54 @@
 
 **[🇮🇹 Leggi in italiano](README.it.md)**
 
-An interactive, educational website mapping climate-related phenomena across Italy, using real public satellite and sensor data. Started as an urban heat island (UHI) tracker; grew into six modules covering heat, water, volcanoes, fires, desertification, and hydrogeological risk — all built by one person on free, public data. The goal is not just to show the problem, but to make it actionable: what a city can do, and — just as importantly — what a single household can do about it.
+An interactive, educational website mapping climate and environmental hazards across Italy, using real public satellite and sensor data. Started as an urban heat island (UHI) tracker; grew into seven modules covering heat, water, volcanoes, fires, desertification, hydrogeological risk, and earthquakes — all built by one person on free, public data. The goal is not just to show the problem, but to make it actionable: what a city can do, and — just as importantly — what a single household can do about it.
 
 ## Modules
 
-- 🌡️ **Heat** — estimated UHI intensity per Italian city, live weather, a mitigation simulator (green cover / albedo sliders), a cost & savings estimator, and a "what you can do at home" section (cool roofs, reflective membranes, green roofs, evaporative AC pre-cooling, and more).
-- 💧 **Water** — major rivers and lakes, drought/shrinkage case studies, NDWI satellite overlay to see surface water directly.
-- 🌋 **Volcanoes** — Etna, Vesuvius, Stromboli, Campi Flegrei; live seismicity near each one (INGV), links to official webcams, SWIR satellite overlay for heat/lava flows.
-- 🔥 **Fires** — historical case studies, NBR satellite overlay for burn scars, and **live positions of Italy's Canadair CL-415 firefighting fleet** (see below).
+- 🌡️ **Heat** — estimated UHI intensity per Italian city, live weather, a mitigation simulator (green cover / albedo sliders), a cost & savings estimator, historical summer comparison, and a "what you can do at home" section (cool roofs, reflective membranes, green roofs, evaporative AC pre-cooling, solar panel yield gain from cooler roofs, and more).
+- 💧 **Water** — major rivers and lakes, drought/shrinkage case studies, live hydrometric water level for Lombardia (ARPA sensors), regional sea-surface temperature (6 coastal zones, nearest to wherever you're looking on the map), NDWI satellite overlay to see surface water directly, a Sentinel-1 SAR overlay that sees through cloud cover (optical NDWI can't) — useful for flood extent during a storm — and 14 Mediterranean-wide markers with live sea temperature/level (Open-Meteo Marine) plus a sourced narrative on what's happening to marine fauna in that sub-basin (marine heatwaves, tropicalization, jellyfish blooms — real documented phenomena, not live data).
+- 🌋 **Volcanoes** — Etna, Vesuvius, Stromboli, Campi Flegrei; live seismicity near each one (INGV), links to official webcams (embedded photo gallery for Etna/Stromboli, direct link for the others), SWIR satellite overlay for heat/lava flows, and **SO₂ + Aerosol Index overlays (Sentinel-5P/TROPOMI)** showing where a volcanic plume is heading — plus a link to Copernicus CAMS for hourly ash-dispersion forecasts, and (Etna only) real-world context on Catania airport ash closures.
+- 🔥 **Fires** — historical case studies, NBR satellite overlay for burn scars, **live wildfire hotspots** (VIIRS/NASA FIRMS, last 24h, each one clickable), and **live positions of Italy's Canadair/Erickson firefighting fleet** with click-to-see flight track (see below).
 - 🏜️ **Desertification** — ISPRA risk-classified areas, NDVI overlay to see vegetation stress directly.
-- 🌊 **Hydrogeological risk** — how fire and desertification lead to bare soil and flash floods/landslides, ISPRA risk data.
+- 🌊 **Hydrogeological risk** — how fire and desertification lead to bare soil and flash floods/landslides, ISPRA risk data, and a pointer to EGMS (Copernicus ground-motion service) for real subsidence measurements.
+- 🌍 **Earthquakes** — live seismicity across Italy (INGV, last 7 days, magnitude ≥ 2.0), an explainer on why magnitude scales differ (ML/Mw/Md) and how magnitude differs from the Mercalli intensity scale.
 
-All estimates are clearly labeled as models, not measurements — see [Methodology](#methodology--sources) below.
+All estimates are clearly labeled as models, not measurements — see [Methodology](#methodology--sources) below. Every hazard-related module also shows official safety guidance (sourced from Protezione Civile / iononrischio.gov.it, not written from memory) and, where relevant, a live Copernicus EMS alert (see below).
+
+### Live Copernicus EMS activation alerts
+
+Volcanoes, Fires, Hydrogeological risk, and Earthquakes each check, on open, whether there's a genuinely **active** Copernicus EMS Rapid Mapping activation nearby (within 150km) — not just any EMS product ever filed, which would mostly show stale, months-old risk-planning projects. Two filters make this meaningful instead of misleading:
+
+- **Category-matched**: a wildfire activation only surfaces in the Fires module, a flood/landslide one only in Hydrogeological risk, and so on (`categorySlug` from the EMS API: `fire`, `flood`, `mass`, `volcan`, `earthquake`).
+- **Phase-matched**: only `drmPhase: "response"` (an acute emergency, just declared) counts — `"preparedness"` and `"recovery"` activations are legitimate EMS products but can stay open for months and don't mean "something is happening right now here," so they're excluded.
+
+If nothing matches, nothing renders — no empty section, no placeholder. The backend proxies `mapping.emergency.copernicus.eu` (no CORS from the browser), cached 15 minutes.
 
 ### Live Canadair tracking
 
-The Fires module shows real-time positions of the Protezione Civile's Canadair CL-415 water-bomber fleet. This needed two things verified by hand, not assumed:
+The Fires module shows real-time positions of the Protezione Civile's water-bomber fleet. This needed several things verified by hand, not assumed:
 
-- **Fleet identification**: 13 of the 19 aircraft (registrations `I-DPCx`) have a confirmed ICAO24/Mode-S code, looked up via [adsbdb.com](https://www.adsbdb.com/) — see `src/data/canadair-fleet.ts`. The other 6 aren't in that public database; better to omit them than guess a code that would identify the wrong aircraft.
-- **Live positions**: [OpenSky Network](https://opensky-network.org/) has free, real ADS-B data, but blocks CORS for browser requests — the backend (`server/index.ts`) proxies it, filtered to just this fleet, with a 90-second in-memory cache to stay within OpenSky's low anonymous rate limit.
+- **Fleet identification**: 13 of the 19 Canadair CL-415 (registrations `I-DPCx`), plus 2 Erickson/Sikorsky S-64F helicopters (`I-CFAG`, `I-CFAM`), have a confirmed ICAO24/Mode-S code, looked up via [adsbdb.com](https://www.adsbdb.com/) — see `src/data/canadair-fleet.ts`. Aircraft not in that public database are omitted rather than guessing a code that would identify the wrong aircraft.
+- **Live positions**: [OpenSky Network](https://opensky-network.org/) has free ADS-B data but blocks CORS for browser requests — the backend (`server/index.ts`) proxies it, filtered to just this fleet. Authenticated (OAuth2 client_credentials) when credentials are configured, for a 4000-credit/day quota instead of 400; falls back to the anonymous endpoint gracefully if not.
+- **Flight track on click**: clicking an aircraft fetches and draws its recent track (`/api/canadair-track/:icao24`, proxying OpenSky's `/tracks/all`) — rendered as DOM markers rather than a MapLibre GL line (a GL `Layer` was tried and never rendered correctly across three browsers despite matching the documented API; the dot-based fallback works reliably).
 
 ## Tech stack
 
 - **Frontend:** React 19 + TypeScript + Vite
 - **Map:** [MapLibre GL JS](https://maplibre.org/) (WebGL) via `react-map-gl` — not Leaflet. Leaflet's raster-tile + CSS-scale zoom felt stepped on trackpads; MapLibre does real GPU-interpolated continuous zoom. (For reference: this is inherent to Leaflet, not this app — try zooming on openstreetmap.org, which uses vanilla Leaflet, for comparison.)
-- **Satellite data:** Copernicus Data Space Ecosystem (Sentinel Hub WMS) — true-color, NDVI, NDWI, SWIR, NBR (Sentinel-2, 10m) and Land Surface Temperature (Sentinel-3, ~1km)
-- **Weather data:** Open-Meteo (no API key, CORS-enabled)
-- **Seismic data:** INGV FDSN Event API (no API key, CORS-enabled)
-- **Fire/burn reference data:** EFFIS (JRC/Copernicus) — used for static case-study sourcing only. A live "active fires" WMS/WFS layer was investigated and dropped: the public endpoint's hotspot data turned out to be frozen since ~October 2021 (verified by querying for the maximum timestamp across all its layers), not actually real-time despite being documented as such.
+- **Satellite data:** Copernicus Data Space Ecosystem (Sentinel Hub WMS) —
+  - Sentinel-2 (10m): true-color, NDVI, NDWI, SWIR, NBR
+  - Sentinel-3 SLSTR (~1km): real Land Surface Temperature
+  - Landsat 8-9 (30-100m thermal band): optional finer detail, sparser revisit
+  - Sentinel-5P/TROPOMI (~7x3.5km): SO₂ and UV Aerosol Index, for volcanic plume tracking
+  - Sentinel-1 GRD (10-20m): SAR VV backscatter, cloud-penetrating flood mapping
+- **Atmospheric forecast:** Copernicus CAMS (linked out for hourly ash/SO₂ dispersion forecasts — the raw data is GRIB/NetCDF via a Python-oriented API with no ready WMS found, so this stays a link rather than an embedded layer; see [Roadmap](#roadmap))
+- **Ground motion:** EGMS, Copernicus Land Monitoring Service (linked out — distributed as downloadable vector/CSV, no public anonymous WMS found with stable layer names, so likewise a link rather than an embedded layer)
+- **Emergency mapping:** Copernicus EMS Rapid Mapping activations API (`mapping.emergency.copernicus.eu`) — see [above](#live-copernicus-ems-activation-alerts)
+- **Weather data:** Open-Meteo (no API key, CORS-enabled), including the Marine API for sea-surface temperature
+- **Hydrometric data:** ARPA Lombardia live sensor network (Socrata dataset `647i-nhxk`) for river/lake water level — Lombardia only; a 9-region sweep in an earlier session found no equivalent live API elsewhere, would need scraping
+- **Seismic data:** INGV FDSN Event API (no API key, CORS-enabled) — used for both the Volcanoes module (local seismicity) and the Earthquakes module (national feed)
+- **Fire/burn reference data:** EFFIS (JRC/Copernicus) — used for static case-study sourcing only. A live "active fires" WMS/WFS layer was investigated and dropped: the public endpoint's hotspot data turned out to be frozen since ~October 2021 (verified by querying for the maximum timestamp across all its layers), not actually real-time despite being documented as such. Live hotspots instead come from NASA FIRMS (VIIRS), which is genuinely real-time.
 - **Aircraft tracking:** OpenSky Network (ADS-B), fleet identification cross-checked against adsbdb.com
 - **Backend:** plain Node/Express (`server/index.ts`) — meant to run behind your own Nginx reverse proxy (`/api/*` forwarded to it), not tied to Vercel, Netlify, or any specific host
 - **Linting:** oxlint
@@ -46,10 +66,10 @@ npm install
 cp .env.example .env.local   # then fill in real values, see below
 npm run dev                  # frontend, http://localhost:5173
 npm run server                # backend, http://localhost:3001 — needed for
-                              # Sentinel Hub token exchange and Canadair tracking
+                              # Sentinel Hub token exchange and live-data proxies
 ```
 
-Vite proxies `/api/*` to `localhost:3001` in dev, so both can run side by side without CORS issues. Without the backend running, the app still works — city markers, weather, the simulator, and the cost estimator don't need it — but the Sentinel Hub token exchange and the Canadair layer won't do anything.
+Vite proxies `/api/*` to `localhost:3001` in dev, so both can run side by side without CORS issues. Without the backend running, the app still works — city markers, weather, the simulator, and the cost estimator don't need it — but the Sentinel Hub token exchange, Canadair tracking, wildfire hotspots, volcano webcams, and EMS activation alerts won't do anything.
 
 ### Environment variables
 
@@ -63,9 +83,14 @@ Set these in `.env.local` (never committed — see [Security](#security)). The b
 | `VITE_SENTINEL_INSTANCE_ID_S3` | currently unused | Declared for a future Sentinel-3 brightness-temperature layer; not wired to anything yet — the real LST layer below is what's actually used |
 | `VITE_SENTINEL_INSTANCE_ID_S3_LST` | optional | Sentinel Hub Configuration Instance ID for a Sentinel-3 SLSTR L2 layer (real Land Surface Temperature, `SL_2_LST` product) |
 | `VITE_SENTINEL_INSTANCE_ID_LANDSAT` | optional | Sentinel Hub Configuration Instance ID for a Landsat 8-9 layer (30-100m thermal band) |
+| `VITE_SENTINEL_INSTANCE_ID_S5P_SO2` | optional | Sentinel Hub Configuration Instance ID for a Sentinel-5P L2 SO₂ layer (volcanic plume tracking) |
+| `VITE_SENTINEL_INSTANCE_ID_S5P_AER` | optional | Sentinel Hub Configuration Instance ID for a Sentinel-5P L2 UV Aerosol Index layer — can be the same Instance ID as above if both layers live in one Configuration |
+| `VITE_SENTINEL_INSTANCE_ID_S1` | optional | Sentinel Hub Configuration Instance ID for a Sentinel-1 GRD SAR backscatter layer |
+| `NASA_FIRMS_MAP_KEY` | optional | NASA FIRMS API key for live wildfire hotspots — server-side only |
+| `OPENSKY_CLIENT_ID` / `OPENSKY_CLIENT_SECRET` | optional | OpenSky Network OAuth2 credentials for a higher Canadair-tracking quota — falls back to the anonymous endpoint if unset |
 | `PORT` | optional | Port for the backend process (default `3001`) |
 
-If none of the Sentinel Hub ones are set, the app still works — satellite overlays simply won't render.
+If none of the Sentinel Hub ones are set, the app still works — satellite overlays simply won't render. Same for the other optional keys: each feature degrades gracefully (no live hotspots, lower-quota Canadair tracking, etc.) rather than breaking.
 
 ### Setting up Sentinel Hub (optional, for satellite imagery)
 
@@ -80,9 +105,48 @@ If none of the Sentinel Hub ones are set, the app still works — satellite over
 
    **Known limitation (Landsat only, unresolved):** even with `leastCC` mosaicking and a 45-day lookback window, the Landsat thermal layer can come back empty (no valid pixel, not an error) if every recent pass over an area was cloudy. Confirmed this isn't a caching artifact. Treat it as best-effort; the UI shows a caveat when this layer is selected.
 
+7. Optionally, for volcanic plume tracking: a **Sentinel-5P L2** configuration with two custom evalscript layers — `SO2` and `AER_AI_340_380` (the underscore ID, not the hyphenated variant some editors auto-generate for the same template — verify by previewing which one actually renders the color ramp). Both need the default raw evalscript replaced with a visualization (Sentinel Hub's default templates output the uncalibrated physical value, which renders essentially black/unreadable):
+
+   ```javascript
+   //VERSION=3
+   const band = "SO2"; // or "AER_AI_340_380"
+   var minVal = 0.0;  // SO2: 0.0 to 0.01 mol/m². AER_AI_340_380: -1.0 to 5.0
+   var maxVal = 0.01;
+
+   function setup() {
+     return { input: [band, "dataMask"], output: { bands: 4 } };
+   }
+   var viz = ColorRampVisualizer.createBlueRed(minVal, maxVal);
+   function evaluatePixel(samples) {
+     let ret = viz.process(samples[band]);
+     ret.push(samples.dataMask);
+     return ret;
+   }
+   ```
+
+   Set each layer's **Mosaic order** to **"Most recent"**, not the S2 default of "Least cloud coverage" — a plume moves in hours, a multi-day composite would average it into nothing. Copy the Instance ID into both `VITE_SENTINEL_INSTANCE_ID_S5P_SO2` and `VITE_SENTINEL_INSTANCE_ID_S5P_AER` (same value if both layers live in one Configuration, which they can).
+
+8. Optionally, for SAR flood mapping under cloud cover: a **Sentinel-1 GRD** configuration, custom evalscript layer `VV_BACKSCATTER` (can live in the same Configuration as the S5P layers above):
+
+   ```javascript
+   //VERSION=3
+   function setup() {
+     return { input: ["VV", "dataMask"], output: { bands: 2 } };
+   }
+   const minDB = -20;
+   const maxDB = 0;
+   function evaluatePixel(sample) {
+     let db = 10 * Math.log10(sample.VV);
+     let scaled = Math.max(0, Math.min(1, (db - minDB) / (maxDB - minDB)));
+     return [scaled, sample.dataMask];
+   }
+   ```
+
+   Copy its Instance ID into `VITE_SENTINEL_INSTANCE_ID_S1`.
+
 Note: WMS requests against a public Configuration don't require the OAuth token — but the Instance ID itself still consumes your account's processing-unit quota if shared or scraped, so treat it like a low-sensitivity secret (never commit it).
 
-**Known limit:** the Sentinel-2 L2A collection rejects WMS requests coarser than 1500 m/pixel — at Italy-wide zoom levels the request would exceed that, so the Sentinel-2 layers only render from zoom 7 upward (`minZoom` in `satellite-layers.ts`); the UI shows a hint to zoom in.
+**Known limit:** the Sentinel-2 L2A collection rejects WMS requests coarser than 1500 m/pixel — at Italy-wide zoom levels the request would exceed that, so the Sentinel-2 layers only render from zoom 6 upward (`minZoom` in `satellite-layers.ts`, with 512px tiles rather than the 256px default — verified with a real request that 256px pushes the limit to zoom 7); the UI shows a hint to zoom in.
 
 ## Available scripts
 
@@ -100,20 +164,29 @@ npm run preview      # preview the production frontend build locally
 ```
 src/
 ├── components/
-│   ├── Map/        MapContainer, {City,WaterBody,Volcano,Fire,Desertification,HydroRisk}Markers,
-│   │                CanadairMarkers, DotMarker (shared marker), SatelliteOverlay, LayerControls
-│   ├── Detail/      CityDetail, WaterBodyDetail, VolcanoDetail, FireDetail,
-│   │                DesertificationDetail, HydroRiskDetail, WeatherLive, Simulator,
-│   │                CostEstimator, PersonalSavings, HomeActions
+│   ├── Map/        MapContainer, {City,WaterBody,Volcano,Fire,Desertification,HydroRisk,Earthquake}Markers,
+│   │                CanadairMarkers, WildfireHotspotMarkers, DotMarker (shared marker),
+│   │                SatelliteOverlay, LayerControls, MapCenterTracker, FlyTo
+│   ├── Detail/      CityDetail, WaterBodyDetail, VolcanoDetail, FireDetail, HotspotDetail,
+│   │                DesertificationDetail, HydroRiskDetail, EarthquakeDetail,
+│   │                {Fire,Earthquake,HydroRisk}SafetyInfo, EmsActivationNote,
+│   │                WeatherLive, Simulator, CostEstimator, PersonalSavings, HomeActions,
+│   │                HistoricalComparison, SolarPanelNote, DissipationChart
 │   ├── Info/        InfoPanel, UHIExplainer, AlbedoExplainer
 │   ├── Search/      CitySearch, AddressSearch
 │   └── Layout/      Shell
 ├── data/            cities, water-bodies, volcanoes, fires, desertification-zones,
 │                    hydro-risk, canadair-fleet
-├── hooks/           useWeather, useSeismicity, useSentinel, useCanadairPositions
-└── utils/           uhi-model, simulator, costs, satellite-layers
-server/index.ts       Express backend — Sentinel Hub OAuth2 token exchange,
-                       OpenSky Network proxy (Canadair fleet positions)
+├── hooks/           useWeather, useSeismicity, useSentinel, useCanadairPositions,
+│                    useCanadairTrack, useWildfireHotspots, useItalyEarthquakes,
+│                    useVolcanoWebcams, useWaterLevel, useMarineTrend, useSeasonalTrend,
+│                    useHistoricalComparison, useEmsActivations
+└── utils/           uhi-model, simulator, costs, satellite-layers, dissipation-model,
+                     volcano-activity, geo
+server/index.ts       Express backend — Sentinel Hub OAuth2 token exchange, OpenSky
+                       Network proxy (Canadair positions + flight tracks), NASA FIRMS
+                       proxy (wildfire hotspots), INGV webcam gallery proxy, Copernicus
+                       EMS activations proxy
 ```
 
 The backend is a plain Node/Express process, meant to sit behind an Nginx reverse
@@ -122,7 +195,7 @@ if the backend is also running (`npm run server`).
 
 ## Methodology & sources
 
-The UHI intensity shown per city is a **statistical estimate**, not a satellite measurement, based on population, latitude, coastal proximity, and Po Valley thermal-inversion effects (see `src/utils/uhi-model.ts`). The mitigation simulator and cost/savings estimator are similarly order-of-magnitude models (`src/utils/simulator.ts`, `src/utils/costs.ts`). Water, fire, desertification, and hydrogeological-risk case studies are sourced narratives (ISPRA, EFFIS, ARPA regional bulletins, Copernicus EMS), not live computed statistics — each detail panel cites its source.
+The UHI intensity shown per city is a **statistical estimate**, not a satellite measurement, based on population, latitude, coastal proximity, and Po Valley thermal-inversion effects (see `src/utils/uhi-model.ts`). The mitigation simulator and cost/savings estimator are similarly order-of-magnitude models (`src/utils/simulator.ts`, `src/utils/costs.ts`). Water, fire, desertification, and hydrogeological-risk case studies are sourced narratives (ISPRA, EFFIS, ARPA regional bulletins, Copernicus EMS), not live computed statistics — each detail panel cites its source. Safety guidance is sourced from protezionecivile.gov.it and iononrischio.gov.it, not written from memory.
 
 - Oke, T.R. (1982). *The energetic basis of the urban heat island.* Quarterly Journal of the Royal Meteorological Society, 108(455), 1-24.
 - Bowler, D.E. et al. (2010). *Urban greening to cool towns and cities: A systematic review of the empirical evidence.* Landscape and Urban Planning, 97(3), 147-155.
@@ -139,17 +212,29 @@ This is (or will be) a public repository. Secret hygiene is treated as a precond
 
 - `.env`, `.env.local`, and any `.env.*` other than `.env.example` are gitignored.
 - `gitleaks` runs as a pre-commit hook (`.pre-commit-config.yaml`, `.gitleaks.toml`) and in CI (`.github/workflows/security.yml`), scanning every commit/push for secret-shaped strings.
-- `SENTINEL_CLIENT_SECRET` never carries the `VITE_` prefix, so Vite never bundles it into client code — it's only read by `server/index.ts`, server-side.
-- If a secret is ever committed by mistake: **revoke it immediately** on dataspace.copernicus.eu, then scrub git history with `git-filter-repo` before pushing anything else.
+- `SENTINEL_CLIENT_SECRET` and `OPENSKY_CLIENT_SECRET` never carry the `VITE_` prefix, so Vite never bundles them into client code — they're only read by `server/index.ts`, server-side.
+- If a secret is ever committed by mistake: **revoke it immediately** on dataspace.copernicus.eu (or opensky-network.org), then scrub git history with `git-filter-repo` before pushing anything else.
 
 In production, set the same variables as real environment variables on the server (a systemd unit's `Environment=` directives, a pm2 ecosystem file, or similar) — never in a committed file, and don't rely on `.env.local` being present (it shouldn't be, on a server you don't fully trust with a copy of your secrets sitting around).
 
+## Privacy
+
+A bilingual (IT/EN) Privacy notice is available from the "Privacy" button in the header (`src/components/Info/PrivacyPolicy.tsx`), based on an actual audit of the codebase: no cookies, no localStorage/analytics/tracking, no accounts or forms that persist data. The one real touchpoint is the address search, which sends the typed query directly from the browser to Nominatim/OpenStreetMap. **Before deploying publicly, fill in the `[insert contact email]` placeholder in that component** with a real contact — this wasn't set automatically since publishing a personal email is your call to make, not a default to assume. This is a good-faith technical description for a small personal project, not legal advice.
+
 ## Roadmap
 
-- Historical Open-Meteo data: compare 1990s vs. today summer temperatures.
+- Historical Open-Meteo data: compare 1990s vs. today summer temperatures (partially done — see the historical-comparison feature in the Heat module; extend to more cities/periods).
 - Real UHI values computed from urban-vs-rural LST difference (needs raster processing).
 - Neighborhood-level granularity using Sentinel-2 at 10m.
-- English/Italian language toggle in the UI itself.
+- English/Italian language toggle in the UI itself — **Phase 1 done** (react-i18next, `src/locales/{it,en}/translation.json`): module titles/subtitles, the UHI/albedo explainers, methodology notes, safety info, and the satellite-layer selector are translated, with a toggle in the header. Longer per-item narrative text (fire/hydro-risk/volcano case studies, detail-panel technical notes) is still Italian-only — a phase 2.
 - Cross-city comparison view.
-- Volcano webcams: currently link out to the official INGV page (no public embeddable stream found); revisit if INGV ever exposes one.
+- Embedded CAMS ash/SO₂ dispersion **forecast** layer, not just a link — blocked on CAMS ADS exposing only raw GRIB/NetCDF via a Python-oriented API; would need a small backend service to fetch and rasterize it, or a not-yet-found ready WMS.
+- Embedded EGMS ground-motion layer, not just a link — blocked on no public anonymous WMS found with stable layer names; EGMS data is distributed as downloadable vector/CSV.
+- An air-quality module (NO₂/CO/CH₄ via Sentinel-5P) — a full new module, not a small addition, so treated as a separate future initiative rather than bundled into existing ones.
+- Copernicus EMS activation check for other, less time-critical categories (`storm`, `industrial`, `environment`) if a module for them ever exists.
+- Hydrometric coverage beyond Lombardia — no live API found in a 9-region sweep; would need scraping regional ARPA sites individually.
 - Deploy: domain, server Nginx config, `server/index.ts` running as a permanent service (pm2/systemd).
+
+## License
+
+[GNU AGPLv3](LICENSE). The copyleft extends over the network: if you run a modified version of this site as a public service, you must make your modified source available to its users too — not just to people you distribute the code to directly, which is what a plain GPL would require. Chosen deliberately for a public-interest educational project: derivatives should stay open, including when only offered as a hosted service rather than distributed software.

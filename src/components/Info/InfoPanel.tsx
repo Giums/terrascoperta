@@ -1,3 +1,4 @@
+import { Trans, useTranslation } from "react-i18next";
 import UHIExplainer from "./UHIExplainer";
 import AlbedoExplainer from "./AlbedoExplainer";
 import "./InfoPanel.css";
@@ -15,17 +16,18 @@ const LEGEND = [
 ];
 
 export default function InfoPanel({ onClose }: InfoPanelProps) {
+  const { t } = useTranslation();
   return (
     <div className="info-panel">
       <div className="info-panel__header">
-        <h2>Isole di calore urbane in Italia</h2>
+        <h2>{t("infoPanel.title")}</h2>
         <button type="button" className="info-panel__close" onClick={onClose} aria-label="Chiudi pannello informativo">
           ×
         </button>
       </div>
 
       <section className="info-panel__section">
-        <h3>Legenda — intensità UHI stimata</h3>
+        <h3>{t("infoPanel.legendTitle")}</h3>
         <ul className="info-panel__legend">
           {LEGEND.map((item) => (
             <li key={item.label}>
@@ -45,18 +47,14 @@ export default function InfoPanel({ onClose }: InfoPanelProps) {
       </section>
 
       <section className="info-panel__section">
-        <h3>Note metodologiche</h3>
+        <h3>{t("infoPanel.methodologyTitle")}</h3>
         <p>
-          I valori di UHI mostrati sulla mappa sono <strong>stime modellistiche</strong>, non
-          misurazioni dirette, calcolate da popolazione, latitudine, prossimità alla costa e
-          posizione in Pianura Padana. I layer satellitari (Copernicus Sentinel Hub) mostrano la
-          temperatura di superficie reale, con ~2 giorni di latenza. Costi e risparmi sono ordini
-          di grandezza a scala urbana, non preventivi.
+          <Trans i18nKey="infoPanel.methodologyText" components={{ b: <strong /> }} />
         </p>
       </section>
 
       <section className="info-panel__section">
-        <h3>Fonti scientifiche</h3>
+        <h3>{t("infoPanel.sourcesTitle")}</h3>
         <ul className="info-panel__sources">
           <li>Oke, T.R. (1982). "The energetic basis of the urban heat island." <em>QJRMS</em>, 108(455), 1-24.</li>
           <li>Bowler, D.E. et al. (2010). "Urban greening to cool towns and cities." <em>Landscape and Urban Planning</em>, 97(3), 147-155.</li>

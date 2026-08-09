@@ -1,0 +1,93 @@
+{
+  "app": {
+    "privacyButton": "Privacy",
+    "whatIsUHI": "Cos'è l'UHI?",
+    "languageToggle": "EN"
+  },
+  "modules": {
+    "calore": { "label": "Calore", "title": "Isole di calore urbane", "subtitle": "Città italiane · dati satellitari e meteo live" },
+    "acqua": { "label": "Acqua", "title": "Monitoraggio acqua", "subtitle": "Fiumi e laghi italiani · dati satellitari NDWI" },
+    "vulcani": { "label": "Vulcani", "title": "Vulcani italiani", "subtitle": "Sismicità INGV live · dati satellitari termici" },
+    "incendi": { "label": "Incendi", "title": "Incendi boschivi", "subtitle": "Casi studio recenti · cicatrici da incendio via satellite (NBR)" },
+    "desertificazione": { "label": "Desertificazione", "title": "Desertificazione", "subtitle": "Aree a rischio ISPRA · salute della vegetazione (NDVI)" },
+    "idrogeologico": { "label": "Rischio idrogeologico", "title": "Rischio idrogeologico", "subtitle": "Alluvioni e frane · dal suolo nudo al dissesto" },
+    "terremoti": { "label": "Terremoti", "title": "Terremoti in Italia", "subtitle": "Sismicità INGV in tempo reale · ultimi 7 giorni" }
+  },
+  "uhiExplainer": {
+    "title1": "Cos'è l'isola di calore urbana",
+    "p1": "Le città sono più calde della campagna circostante. Asfalto, cemento e tetti scuri assorbono la radiazione solare di giorno e la rilasciano lentamente di notte; la scarsità di vegetazione riduce l'evapotraspirazione che normalmente raffredda l'aria; la densità di edifici intrappola il calore e riduce la ventilazione. Il risultato è un differenziale termico — l'isola di calore urbana (Urban Heat Island, UHI) — che può superare i 4–5 °C rispetto alle aree rurali vicine, soprattutto nelle notti d'estate.",
+    "title2": "Perché succede",
+    "li1": "Superfici impermeabili scure assorbono più energia solare (basso albedo).",
+    "li2": "Meno vegetazione = meno raffrescamento evaporativo.",
+    "li3": "Geometria urbana (canyon tra edifici) intrappola calore e riduce la dispersione notturna.",
+    "li4": "Calore antropico: traffico, industria, climatizzatori.",
+    "title3": "Effetti sulla salute",
+    "p2": "Le notti tropicali (minima sopra 20 °C) impediscono il recupero fisiologico dal caldo diurno e aumentano il rischio di stress da calore, soprattutto per anziani, bambini e persone con patologie cardiovascolari o respiratorie. L'UHI amplifica questo rischio proprio dove la densità di popolazione è più alta.",
+    "title4": "Perché conviene agire ora, non aspettare",
+    "p3": "Le ondate di calore in Europa sono diventate più frequenti e intense nei decenni recenti (IPCC, Sesto Rapporto di Valutazione, 2021): non è un problema che si risolve da solo, si accumula un'estate dopo l'altra. Ogni anno senza interventi è un anno in più in cui il circolo vizioso del condizionamento (vedi il pannello di dettaglio di una città) continua ad aggravarsi — e un anno in più di bollette piene prima che un eventuale investimento inizi a ripagarsi (vedi \"payback\" nello stimatore costi). Molti interventi domestici (vernice riflettente, piante rampicanti, un albero) costano poco e non richiedono un piano urbanistico per partire: si può iniziare da un singolo tetto. Rimandare non è una scelta neutra — è la scelta di continuare a pagare il problema invece di ridurlo."
+  },
+  "albedoExplainer": {
+    "title1": "Albedo: perché il colore delle superfici conta",
+    "p1": "L'albedo è la frazione di luce solare che una superficie riflette invece di assorbire. Va da 0 (assorbe tutto, nero perfetto) a 1 (riflette tutto, bianco perfetto).",
+    "title2": "Effetto giorno vs notte",
+    "p2": "Un tetto scuro (albedo ~0.1) a mezzogiorno raggiunge 70–80 °C di temperatura superficiale. Di notte rilascia quel calore accumulato per ore — è come avere un termosifone acceso sul soffitto. Un tetto bianco (albedo ~0.75) arriva a 35–45 °C: ha il 50–60% di energia termica in meno da rilasciare, e la città si raffredda più in fretta dopo il tramonto."
+  },
+  "infoPanel": {
+    "title": "Isole di calore urbane in Italia",
+    "legendTitle": "Legenda — intensità UHI stimata",
+    "methodologyTitle": "Note metodologiche",
+    "methodologyText": "I valori di UHI mostrati sulla mappa sono <b>stime modellistiche</b>, non misurazioni dirette, calcolate da popolazione, latitudine, prossimità alla costa e posizione in Pianura Padana. I layer satellitari (Copernicus Sentinel Hub) mostrano la temperatura di superficie reale, con ~2 giorni di latenza. Costi e risparmi sono ordini di grandezza a scala urbana, non preventivi.",
+    "sourcesTitle": "Fonti scientifiche"
+  },
+  "layerControls": {
+    "label": "Layer satellitare",
+    "baseMapOnly": "Solo mappa base",
+    "dateLabel": "Data (~2 giorni di latenza)",
+    "zoomHint": "Zoom su una città per vedere questo layer.",
+    "landsatHint": "Landsat passa ogni ~8-16 giorni: può restare vuoto se nuvoloso.",
+    "s5pHint": "Pixel molto grosso (~7km): indica \"c'è un pennacchio da queste parti\", non il suo confine esatto.",
+    "s1Hint": "Radar, non foto: penetra le nuvole ma l'immagine è in scala di grigi.",
+    "options": {
+      "s2TrueColor": "Vero colore (Sentinel-2, 10m)",
+      "s2Ndvi": "Vegetazione — NDVI (Sentinel-2, 10m)",
+      "s2Ndwi": "Presenza d'acqua — NDWI (Sentinel-2, 10m)",
+      "s2Swir": "Calore/colate laviche — SWIR (Sentinel-2, 10m)",
+      "s2Nbr": "Cicatrici da incendio — NBR (Sentinel-2, 10m)",
+      "s3Lst": "Temperatura superficie reale — LST (Sentinel-3, ~1km)",
+      "landsatThermal": "Temperatura superficie (Landsat, ~30-100m) — copertura non garantita",
+      "s5pSo2": "SO₂ atmosferico — pennacchi vulcanici (Sentinel-5P, ~7km)",
+      "s5pAer": "Indice aerosol — cenere/fumo in quota (Sentinel-5P, ~7km)",
+      "s1Backscatter": "Radar SAR — vede sotto le nuvole (Sentinel-1, 10-20m)"
+    }
+  },
+  "safety": {
+    "fire": {
+      "title": "Cosa fare in caso di incendio",
+      "p1": "<b>Se avvisti fiamme o anche solo fumo</b>, telefona subito al <b>115</b> (Vigili del Fuoco) o al <b>112</b> (numero unico di emergenza). Indica con precisione dove sei — comune, località, punti di riferimento — e non riagganciare finché non te lo dice l'operatore. Non dare per scontato che l'abbia già segnalato qualcun altro.",
+      "p2": "<b>Se sei coinvolto nell'incendio</b>: cerca una via di fuga verso una strada o un corso d'acqua, non spostarti mai sottovento (nella direzione in cui il fuoco viene spinto dal vento) — rischi di restare intrappolato. Se sei circondato, sdraiati in una zona senza vegetazione: il fumo tende a salire. Se possibile, attraversa il fronte del fuoco nel punto più debole per raggiungere l'area già bruciata, più sicura. Non fermarti lungo le strade per guardare: ostacoli i soccorsi.",
+      "p3": "<b>Prevenzione</b>: non gettare mai mozziconi o fiammiferi accesi — bastano per incendiare l'erba secca. Non accendere fuochi fuori dalle aree attrezzate, e mai se c'è vento. Se parcheggi l'auto su erba secca, controlla che la marmitta non la tocchi. Non bruciare residui agricoli senza le dovute precauzioni.",
+      "redCross": "La Croce Rossa Italiana fa parte del sistema nazionale di Protezione Civile e interviene con assistenza socio-sanitaria, accoglienza e supporto anche nella lotta antincendio boschivo (AIB) — ma non è il numero da chiamare per primo: la segnalazione iniziale va sempre a 115/112.",
+      "source": "Fonte: <a1>Dipartimento della Protezione Civile</a1> e <a2>Io Non Rischio</a2>."
+    },
+    "earthquake": {
+      "title": "Cosa fare in caso di terremoto",
+      "p1": "<b>Durante la scossa, al chiuso</b>: ripara nel vano di una porta su un muro portante, sotto un tavolo o un letto robusto, oppure vicino a una parete portante. Non usare scale o ascensore.",
+      "p2": "<b>Durante la scossa, all'aperto</b>: allontanati da edifici, alberi, lampioni e linee elettriche. In auto, non sostare vicino a ponti, terreni franosi o spiagge.",
+      "p3": "<b>Dopo la scossa</b>: verifica lo stato di chi ti è vicino, senza spostare persone ferite gravemente. Chiudi gas, acqua e corrente. Esci con prudenza indossando le scarpe, raggiungi uno spazio aperto lontano dagli edifici, evita ascensori e scale danneggiate. Se sei vicino alla costa e la scossa è forte: allontanati dalla spiaggia e raggiungi un punto elevato (rischio maremoto).",
+      "p4": "<b>Numero da chiamare</b>: 112 (numero unico di emergenza), che smista a 115 (Vigili del Fuoco, soccorso tecnico/estrazione) o 118 (emergenza sanitaria) a seconda del bisogno.",
+      "redCross": "La Croce Rossa Italiana fa parte del sistema nazionale di Protezione Civile e interviene con assistenza socio-sanitaria, moduli di accoglienza e ospedali da campo dopo l'evento — ma non è il numero da chiamare per primo: la segnalazione iniziale va sempre a 112.",
+      "source": "Fonte: <a1>Dipartimento della Protezione Civile</a1> e <a2>Io Non Rischio</a2>."
+    },
+    "hydroRisk": {
+      "floodTitle": "Cosa fare in caso di alluvione",
+      "p1": "<b>Al chiuso</b>: non scendere in cantine, seminterrati o garage per mettere in salvo beni — sono le zone più pericolose. Sali ai piani superiori, evita l'ascensore, disattiva gas e impianti elettrici. Non bere acqua dal rubinetto: potrebbe essere contaminata.",
+      "p2": "<b>All'aperto</b>: allontanati dalla zona allagata — l'acqua scorre più velocemente di quanto sembri. Evita l'auto: bastano pochi centimetri d'acqua per perdere il controllo. Evita sottopassi e argini.",
+      "p3": "<b>Dopo</b>: aspetta l'autorizzazione delle autorità prima di rientrare, non percorrere strade allagate (possibili buche o tombini aperti), verifica gas ed elettricità prima di riattivarli, non mangiare cibo entrato in contatto con l'acqua dell'alluvione.",
+      "landslideTitle": "Cosa fare in caso di frana",
+      "p4": "Segnali precursori: piccole crepe o fratture nei muri, muri che ruotano o si spostano. Se la frana si muove verso di te, allontanati subito verso un punto più elevato e stabile — se non puoi scappare, rannicchiati proteggendo la testa. Tieni d'occhio la frana per pietre o detriti che rimbalzano, non sostare sotto pali o tralicci, allontanati da corsi d'acqua e torrenti (rischio colate di fango). Dopo l'evento, segnala eventuali persone intrappolate ai soccorritori senza entrare tu stesso nell'area in frana.",
+      "p5": "<b>Numero da chiamare</b>: 112 (numero unico di emergenza).",
+      "redCross": "La Croce Rossa Italiana fa parte del sistema nazionale di Protezione Civile e interviene con assistenza socio-sanitaria e accoglienza dopo l'evento — ma non è il numero da chiamare per primo.",
+      "source": "Fonte: <a1>Dipartimento della Protezione Civile — alluvioni</a1> e <a2>frane</a2>."
+    }
+  }
+}

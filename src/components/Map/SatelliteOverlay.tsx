@@ -28,6 +28,12 @@ interface SatelliteOverlayProps {
  * zoom 6 — la vista di default del sito (verificato con una richiesta reale:
  * a 256px l'area torna l'immagine di errore di Sentinel Hub, a 512px la
  * stessa area torna dati veri).
+ * URL relativo (`/api/satellite-tile/...`, non il dominio Sentinel Hub
+ * diretto): passa dal backend, che tiene una cache in-memory per bbox+layer+
+ * data — Sentinel Hub ricalcola ogni tile al volo (1-3.5s misurati, verificato
+ * con richieste dirette) e la stessa vista viene richiesta di continuo da
+ * visitatori diversi, quindi una cache condivisa lato server abbatte la
+ * stragrande maggioranza delle richieste ripetute a un fetch quasi istantaneo.
  */
 export default function SatelliteOverlay({ layer, date }: SatelliteOverlayProps) {
   if (layer === "none") return null;
@@ -37,7 +43,7 @@ export default function SatelliteOverlay({ layer, date }: SatelliteOverlayProps)
 
   const time = sentinelTimeRange(date, lookbackDays);
   const tileUrl =
-    `https://sh.dataspace.copernicus.eu/ogc/wms/${instance}` +
+    `/api/satellite-tile/${instance}` +
     `?SERVICE=WMS&REQUEST=GetMap&VERSION=1.3.0&LAYERS=${encodeURIComponent(name)}` +
     `&STYLES=&FORMAT=image/png&TRANSPARENT=true&CRS=EPSG:3857` +
     `&WIDTH=512&HEIGHT=512&BBOX={bbox-epsg-3857}&time=${encodeURIComponent(time)}`;

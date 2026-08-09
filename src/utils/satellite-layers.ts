@@ -115,8 +115,10 @@ export function staticSnapshotUrl(
   const { instance, name, lookbackDays } = SENTINEL_LAYERS[layer];
   if (!instance) return null;
   const time = sentinelTimeRange(date, lookbackDays);
+  // URL relativo verso il proxy con cache del backend, non il dominio Sentinel
+  // Hub diretto — vedi il commento in SatelliteOverlay.tsx.
   return (
-    `https://sh.dataspace.copernicus.eu/ogc/wms/${instance}?SERVICE=WMS&REQUEST=GetMap&VERSION=1.3.0` +
+    `/api/satellite-tile/${instance}?SERVICE=WMS&REQUEST=GetMap&VERSION=1.3.0` +
     `&LAYERS=${encodeURIComponent(name)}&STYLES=&FORMAT=image/png&CRS=EPSG:4326` +
     `&WIDTH=${width}&HEIGHT=${height}&BBOX=${bbox.minLat},${bbox.minLng},${bbox.maxLat},${bbox.maxLng}` +
     `&time=${encodeURIComponent(time)}`

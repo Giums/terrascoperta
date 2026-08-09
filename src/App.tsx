@@ -1,8 +1,10 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import Shell from "./components/Layout/Shell";
 import MapView from "./components/Map/MapContainer";
 import CityMarkers from "./components/Map/CityMarkers";
 import WaterBodyMarkers from "./components/Map/WaterBodyMarkers";
+import MediterraneanMarkers from "./components/Map/MediterraneanMarkers";
 import VolcanoMarkers from "./components/Map/VolcanoMarkers";
 import FireMarkers from "./components/Map/FireMarkers";
 import CanadairMarkers from "./components/Map/CanadairMarkers";
@@ -20,6 +22,7 @@ import UnifiedSearch from "./components/Search/UnifiedSearch";
 import CityDetail from "./components/Detail/CityDetail";
 import AddressDetail from "./components/Detail/AddressDetail";
 import WaterBodyDetail from "./components/Detail/WaterBodyDetail";
+import MediterraneanDetail from "./components/Detail/MediterraneanDetail";
 import VolcanoDetail from "./components/Detail/VolcanoDetail";
 import FireDetail from "./components/Detail/FireDetail";
 import HotspotDetail from "./components/Detail/HotspotDetail";
@@ -27,10 +30,13 @@ import DesertificationDetail from "./components/Detail/DesertificationDetail";
 import HydroRiskDetail from "./components/Detail/HydroRiskDetail";
 import EarthquakeDetail from "./components/Detail/EarthquakeDetail";
 import InfoPanel from "./components/Info/InfoPanel";
+import PrivacyPolicy from "./components/Info/PrivacyPolicy";
 import { cities } from "./data/cities";
 import type { City } from "./data/cities";
 import { waterBodies } from "./data/water-bodies";
 import type { WaterBody } from "./data/water-bodies";
+import { mediterraneanZones } from "./data/mediterranean-zones";
+import type { MediterraneanZone } from "./data/mediterranean-zones";
 import { volcanoes } from "./data/volcanoes";
 import type { Volcano } from "./data/volcanoes";
 import { fires } from "./data/fires";
@@ -49,61 +55,42 @@ import "./App.css";
 
 type Module = "calore" | "acqua" | "vulcani" | "incendi" | "desertificazione" | "idrogeologico" | "terremoti";
 
-const MODULES: { id: Module; label: string; icon: string; title: string; subtitle: string; defaultLayer: SatelliteLayerId }[] = [
+// label/title/subtitle vivono in locales/*/translation.json sotto "modules.<id>"
+// — qui restano solo icona e layer di default, non testo da tradurre.
+const MODULES: { id: Module; icon: string; defaultLayer: SatelliteLayerId }[] = [
   {
     id: "calore",
-    label: "Calore",
     icon: "🌡️",
-    title: "Isole di calore urbane",
-    subtitle: "Città italiane · dati satellitari e meteo live",
     defaultLayer: sentinelHubAvailable ? "s3-lst" : "none",
   },
   {
     id: "acqua",
-    label: "Acqua",
     icon: "💧",
-    title: "Monitoraggio acqua",
-    subtitle: "Fiumi e laghi italiani · dati satellitari NDWI",
     defaultLayer: sentinelHubAvailable ? "s2-ndwi" : "none",
   },
   {
     id: "vulcani",
-    label: "Vulcani",
     icon: "🌋",
-    title: "Vulcani italiani",
-    subtitle: "Sismicità INGV live · dati satellitari termici",
     defaultLayer: sentinelHubAvailable ? "s2-true-color" : "none",
   },
   {
     id: "incendi",
-    label: "Incendi",
     icon: "🔥",
-    title: "Incendi boschivi",
-    subtitle: "Casi studio recenti · cicatrici da incendio via satellite (NBR)",
     defaultLayer: sentinelHubAvailable ? "s2-nbr" : "none",
   },
   {
     id: "desertificazione",
-    label: "Desertificazione",
     icon: "🏜️",
-    title: "Desertificazione",
-    subtitle: "Aree a rischio ISPRA · salute della vegetazione (NDVI)",
     defaultLayer: sentinelHubAvailable ? "s2-ndvi" : "none",
   },
   {
     id: "idrogeologico",
-    label: "Rischio idrogeologico",
     icon: "🌊",
-    title: "Rischio idrogeologico",
-    subtitle: "Alluvioni e frane · dal suolo nudo al dissesto",
     defaultLayer: sentinelHubAvailable ? "s2-true-color" : "none",
   },
   {
     id: "terremoti",
-    label: "Terremoti",
     icon: "🌍",
-    title: "Terremoti in Italia",
-    subtitle: "Sismicità INGV in tempo reale · ultimi 7 giorni",
     defaultLayer: "none",
   },
 ];
@@ -115,10 +102,12 @@ function defaultLayerDate(): string {
 }
 
 function App() {
+  const { t, i18n } = useTranslation();
   const [module, setModule] = useState<Module>("calore");
   const [selectedCity, setSelectedCity] = useState<City | null>(null);
   const [selectedAddress, setSelectedAddress] = useState<AddressResult | null>(null);
   const [selectedWaterBody, setSelectedWaterBody] = useState<WaterBody | null>(null);
+  const [selectedMedZone, setSelectedMedZone] = useState<MediterraneanZone | null>(null);
   const [selectedVolcano, setSelectedVolcano] = useState<Volcano | null>(null);
   const [selectedFire, setSelectedFire] = useState<FireEvent | null>(null);
   const [selectedHotspot, setSelectedHotspot] = useState<WildfireHotspot | null>(null);
@@ -150,6 +139,7 @@ function App() {
     (h) => !volcanoes.some((v) => haversineKm(v.lat, v.lng, h.lat, h.lon) <= VOLCANO_THERMAL_RADIUS_KM),
   );
   const [showInfo, setShowInfo] = useState(false);
+  const [showPrivacy, setShowPrivacy] = useState(false);
   // Di default mostriamo subito la temperatura di superficie reale (Sentinel-3
   // LST): il calore va visto, non scoperto in un menu.
   const [layer, setLayer] = useState<SatelliteLayerId>(MODULES[0].defaultLayer);
@@ -161,9 +151,11 @@ function App() {
 
   function clearSelection() {
     setShowInfo(false);
+    setShowPrivacy(false);
     setSelectedCity(null);
     setSelectedAddress(null);
     setSelectedWaterBody(null);
+    setSelectedMedZone(null);
     setSelectedVolcano(null);
     setSelectedFire(null);
     setSelectedHotspot(null);
@@ -187,15 +179,19 @@ function App() {
     clearSelection();
     setSelectedAddress(result);
     setFlyTarget({ lat: result.lat, lng: result.lng, zoom: 17 });
-    // A zoom da singolo edificio la mappa di calore (~1km/pixel) è solo un blocco
-    // di colore poco utile: mostriamo la foto satellitare reale se disponibile,
-    // altrimenti la mappa base (via/edifici) invece del layer termico a bassa risoluzione.
-    setLayer(sentinelHubAvailable ? "s2-true-color" : "none");
+    // Il layer si attiva a volo concluso (FlyTo onArrive sotto), non subito —
+    // altrimenti Sentinel Hub calcola tile per ogni zoom intermedio attraversato
+    // durante l'animazione, sprecate perché l'utente non le vede mai.
   }
 
   function selectWaterBody(waterBody: WaterBody) {
     clearSelection();
     setSelectedWaterBody(waterBody);
+  }
+
+  function selectMedZone(zone: MediterraneanZone) {
+    clearSelection();
+    setSelectedMedZone(zone);
   }
 
   function selectVolcano(volcano: Volcano) {
@@ -233,12 +229,19 @@ function App() {
     setShowInfo(true);
   }
 
+  function openPrivacy() {
+    clearSelection();
+    setShowPrivacy(true);
+  }
+
   const panel = selectedAddress ? (
     <AddressDetail address={selectedAddress} cities={cities} onClose={() => setSelectedAddress(null)} />
   ) : selectedCity ? (
     <CityDetail city={selectedCity} onClose={() => setSelectedCity(null)} />
   ) : selectedWaterBody ? (
     <WaterBodyDetail waterBody={selectedWaterBody} onClose={() => setSelectedWaterBody(null)} />
+  ) : selectedMedZone ? (
+    <MediterraneanDetail zone={selectedMedZone} onClose={() => setSelectedMedZone(null)} />
   ) : selectedVolcano ? (
     <VolcanoDetail
       volcano={selectedVolcano}
@@ -257,6 +260,8 @@ function App() {
     <EarthquakeDetail event={selectedEarthquake} onClose={() => setSelectedEarthquake(null)} />
   ) : showInfo ? (
     <InfoPanel onClose={() => setShowInfo(false)} />
+  ) : showPrivacy ? (
+    <PrivacyPolicy onClose={() => setShowPrivacy(false)} />
   ) : undefined;
 
   const currentModule = MODULES.find((m) => m.id === module)!;
@@ -270,8 +275,8 @@ function App() {
               {currentModule.icon}
             </span>
             <div>
-              <h1>{currentModule.title}</h1>
-              <p>{currentModule.subtitle}</p>
+              <h1>{t(`modules.${currentModule.id}.title`)}</h1>
+              <p>{t(`modules.${currentModule.id}.subtitle`)}</p>
             </div>
           </div>
           <div className="app-header__controls">
@@ -283,7 +288,7 @@ function App() {
                   className={module === m.id ? "module-tabs__active" : ""}
                   onClick={() => selectModule(m.id)}
                 >
-                  {m.icon} {m.label}
+                  {m.icon} {t(`modules.${m.id}.label`)}
                 </button>
               ))}
             </div>
@@ -291,10 +296,20 @@ function App() {
               <>
                 <UnifiedSearch cities={cities} onSelectCity={selectCity} onSelectAddress={selectAddress} />
                 <button type="button" className="app-info-button" onClick={openInfo}>
-                  Cos'è l'UHI?
+                  {t("app.whatIsUHI")}
                 </button>
               </>
             )}
+            <button type="button" className="app-info-button" onClick={openPrivacy}>
+              {t("app.privacyButton")}
+            </button>
+            <button
+              type="button"
+              className="app-info-button"
+              onClick={() => i18n.changeLanguage(i18n.language.startsWith("it") ? "en" : "it")}
+            >
+              {t("app.languageToggle")}
+            </button>
           </div>
         </>
       }
@@ -306,6 +321,9 @@ function App() {
             <MapCenterTracker onChange={setMapCenter} />
             {module === "calore" && <CityMarkers cities={cities} onSelect={selectCity} />}
             {module === "acqua" && <WaterBodyMarkers waterBodies={waterBodies} onSelect={selectWaterBody} />}
+            {module === "acqua" && (
+              <MediterraneanMarkers zones={mediterraneanZones} onSelect={selectMedZone} />
+            )}
             {module === "vulcani" && (
               <VolcanoMarkers volcanoes={volcanoes} activity={volcanoActivity} onSelect={selectVolcano} />
             )}
@@ -326,7 +344,15 @@ function App() {
             {selectedAddress && (
               <AddressMarker lat={selectedAddress.lat} lng={selectedAddress.lng} label={selectedAddress.label} />
             )}
-            <FlyTo target={flyTarget} />
+            <FlyTo
+              target={flyTarget}
+              onArrive={() => {
+                // A zoom da singolo edificio la mappa di calore (~1km/pixel) è solo
+                // un blocco di colore poco utile: mostriamo la foto satellitare reale
+                // se disponibile, altrimenti la mappa base invece del layer termico.
+                setLayer(sentinelHubAvailable ? "s2-true-color" : "none");
+              }}
+            />
           </MapView>
           <LayerControls
             layer={layer}

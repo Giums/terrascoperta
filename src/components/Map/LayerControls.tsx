@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { layerMinZoom, sentinelHubAvailable, type SatelliteLayerId } from "../../utils/satellite-layers";
 import { useSeasonalTrend, seasonCutoffMonthDay } from "../../hooks/useSeasonalTrend";
 import { useMarineTrend, MARINE_MIN_YEAR } from "../../hooks/useMarineTrend";
@@ -18,17 +19,19 @@ interface LayerControlsProps {
   mapCenter: { lat: number; lng: number };
 }
 
-const SENTINEL_OPTIONS: { id: SatelliteLayerId; label: string }[] = [
-  { id: "s2-true-color", label: "Vero colore (Sentinel-2, 10m)" },
-  { id: "s2-ndvi", label: "Vegetazione — NDVI (Sentinel-2, 10m)" },
-  { id: "s2-ndwi", label: "Presenza d'acqua — NDWI (Sentinel-2, 10m)" },
-  { id: "s2-swir", label: "Calore/colate laviche — SWIR (Sentinel-2, 10m)" },
-  { id: "s2-nbr", label: "Cicatrici da incendio — NBR (Sentinel-2, 10m)" },
-  { id: "s3-lst", label: "Temperatura superficie reale — LST (Sentinel-3, ~1km)" },
-  { id: "landsat-thermal", label: "Temperatura superficie (Landsat, ~30-100m) — copertura non garantita" },
-  { id: "s5p-so2", label: "SO₂ atmosferico — pennacchi vulcanici (Sentinel-5P, ~7km)" },
-  { id: "s5p-aer-ai", label: "Indice aerosol — cenere/fumo in quota (Sentinel-5P, ~7km)" },
-  { id: "s1-backscatter", label: "Radar SAR — vede sotto le nuvole (Sentinel-1, 10-20m)" },
+// Chiave i18n (layerControls.options.*) per ciascun id — le label vere si
+// costruiscono dentro il componente via t(), qui serve solo l'ordine fisso.
+const SENTINEL_OPTION_IDS: { id: SatelliteLayerId; key: string }[] = [
+  { id: "s2-true-color", key: "s2TrueColor" },
+  { id: "s2-ndvi", key: "s2Ndvi" },
+  { id: "s2-ndwi", key: "s2Ndwi" },
+  { id: "s2-swir", key: "s2Swir" },
+  { id: "s2-nbr", key: "s2Nbr" },
+  { id: "s3-lst", key: "s3Lst" },
+  { id: "landsat-thermal", key: "landsatThermal" },
+  { id: "s5p-so2", key: "s5pSo2" },
+  { id: "s5p-aer-ai", key: "s5pAer" },
+  { id: "s1-backscatter", key: "s1Backscatter" },
 ];
 
 // Cinque città sparse per l'Italia (Nord/Centro/Sud/Sicilia) per una media
@@ -251,16 +254,21 @@ export default function LayerControls({
   compareMode,
   mapCenter,
 }: LayerControlsProps) {
+  const { t } = useTranslation();
   const minZoom = layerMinZoom(layer);
   const minYear = compareMode === "sea" ? MARINE_MIN_YEAR : HEAT_MIN_YEAR;
   const year = Math.min(Math.max(Number(date.slice(0, 4)) || CURRENT_YEAR, minYear), CURRENT_YEAR);
   const [collapsed, setCollapsed] = useState(false);
+  const sentinelOptions = SENTINEL_OPTION_IDS.map((opt) => ({
+    id: opt.id,
+    label: t(`layerControls.options.${opt.key}`),
+  }));
 
   return (
     <div className="layer-controls">
       <div className="layer-controls__header">
         <label className="layer-controls__label" htmlFor="layer-select">
-          Layer satellitare
+          {t("layerControls.label")}
         </label>
         <button
           type="button"
@@ -276,9 +284,9 @@ export default function LayerControls({
         value={layer}
         onChange={(e) => onLayerChange(e.target.value as SatelliteLayerId)}
       >
-        <option value="none">Solo mappa base</option>
+        <option value="none">{t("layerControls.baseMapOnly")}</option>
         {sentinelHubAvailable &&
-          SENTINEL_OPTIONS.map((opt) => (
+          sentinelOptions.map((opt) => (
             <option key={opt.id} value={opt.id}>
               {opt.label}
             </option>
@@ -294,7 +302,7 @@ export default function LayerControls({
             ) : (
               <>
                 <label className="layer-controls__label" htmlFor="layer-date">
-                  Data (~2 giorni di latenza)
+                  {t("layerControls.dateLabel")}
                 </label>
                 <input
                   id="layer-date"
@@ -305,20 +313,14 @@ export default function LayerControls({
                 />
               </>
             ))}
-          {minZoom != null && (
-            <p className="layer-controls__hint">Zoom su una città per vedere questo layer.</p>
-          )}
+          {minZoom != null && <p className="layer-controls__hint">{t("layerControls.zoomHint")}</p>}
           {layer === "landsat-thermal" && (
-            <p className="layer-controls__hint">Landsat passa ogni ~8-16 giorni: può restare vuoto se nuvoloso.</p>
+            <p className="layer-controls__hint">{t("layerControls.landsatHint")}</p>
           )}
           {(layer === "s5p-so2" || layer === "s5p-aer-ai") && (
-            <p className="layer-controls__hint">
-              Pixel molto grosso (~7km): indica "c'è un pennacchio da queste parti", non il suo confine esatto.
-            </p>
+            <p className="layer-controls__hint">{t("layerControls.s5pHint")}</p>
           )}
-          {layer === "s1-backscatter" && (
-            <p className="layer-controls__hint">Radar, non foto: penetra le nuvole ma l'immagine è in scala di grigi.</p>
-          )}
+          {layer === "s1-backscatter" && <p className="layer-controls__hint">{t("layerControls.s1Hint")}</p>}
         </>
       )}
     </div>
