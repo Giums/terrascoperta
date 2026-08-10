@@ -119,8 +119,15 @@ function App() {
   // servono davvero evita richieste + re-render dell'intero albero (mappa
   // inclusa) mentre l'utente sta su una scheda che non li usa.
   const { aircraft: canadairAircraft } = useCanadairPositions(module === "incendi");
-  const { hotspots: wildfireHotspots } = useWildfireHotspots(module === "incendi" || module === "vulcani");
-  const { events: earthquakes } = useItalyEarthquakes(module === "terremoti");
+  // Anche quando è selezionato un indirizzo (pannello "Allerte vicino a te" in
+  // AddressDetail) — serve il dato live indipendentemente dal modulo attivo,
+  // dato che la ricerca indirizzo vive nel modulo Calore.
+  const { hotspots: wildfireHotspots, loading: wildfireHotspotsLoading } = useWildfireHotspots(
+    module === "incendi" || module === "vulcani" || Boolean(selectedAddress),
+  );
+  const { events: earthquakes, loading: earthquakesLoading } = useItalyEarthquakes(
+    module === "terremoti" || Boolean(selectedAddress),
+  );
   // Il satellite VIIRS rileva qualsiasi fonte di calore intenso, quindi lava e
   // crateri attivi finiscono negli stessi dati dei roghi — li separiamo per
   // distanza dal vulcano più vicino: entro il raggio è "vulcano attivo", oltre
@@ -235,7 +242,15 @@ function App() {
   }
 
   const panel = selectedAddress ? (
-    <AddressDetail address={selectedAddress} cities={cities} onClose={() => setSelectedAddress(null)} />
+    <AddressDetail
+      address={selectedAddress}
+      cities={cities}
+      wildfireHotspots={wildfireHotspots}
+      wildfireHotspotsLoading={wildfireHotspotsLoading}
+      earthquakes={earthquakes}
+      earthquakesLoading={earthquakesLoading}
+      onClose={() => setSelectedAddress(null)}
+    />
   ) : selectedCity ? (
     <CityDetail city={selectedCity} onClose={() => setSelectedCity(null)} />
   ) : selectedWaterBody ? (

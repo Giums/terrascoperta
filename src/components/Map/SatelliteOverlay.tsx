@@ -12,6 +12,12 @@ interface SatelliteOverlayProps {
   date: string; // YYYY-MM-DD
 }
 
+// Testo ufficiale richiesto dalla Copernicus Sentinel Data Licence quando i
+// dati sono elaborati/modificati (evalscript, mosaicking) — non va confuso
+// col logo "Show logo" di Sentinel Hub, che è un watermark diverso e va
+// disattivato nella Configuration Utility (si ripete su ogni tile altrimenti).
+const SENTINEL_ATTRIBUTION = `Contains modified Copernicus Sentinel data ${new Date().getFullYear()}`;
+
 /**
  * Overlay satellitare da Sentinel Hub (Copernicus Data Space Ecosystem, 10m per
  * Sentinel-2 / ~1km per Sentinel-3). Le richieste WMS verso una Configuration
@@ -49,7 +55,14 @@ export default function SatelliteOverlay({ layer, date }: SatelliteOverlayProps)
     `&WIDTH=512&HEIGHT=512&BBOX={bbox-epsg-3857}&time=${encodeURIComponent(time)}`;
 
   return (
-    <Source key={`${layer}-${date}`} id="satellite" type="raster" tiles={[tileUrl]} tileSize={512}>
+    <Source
+      key={`${layer}-${date}`}
+      id="satellite"
+      type="raster"
+      tiles={[tileUrl]}
+      tileSize={512}
+      attribution={SENTINEL_ATTRIBUTION}
+    >
       <Layer
         id="satellite-layer"
         type="raster"

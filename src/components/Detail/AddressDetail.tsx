@@ -1,6 +1,8 @@
 import { useState } from "react";
 import type { City } from "../../data/cities";
 import type { AddressResult } from "../../utils/geocode";
+import type { WildfireHotspot } from "../../hooks/useWildfireHotspots";
+import type { EarthquakeEvent } from "../../hooks/useItalyEarthquakes";
 import { nearestCity } from "../../utils/geo";
 import { estimateUHI } from "../../utils/uhi-model";
 import { simulateMitigation } from "../../utils/simulator";
@@ -11,15 +13,28 @@ import DissipationChart from "./DissipationChart";
 import PersonalSavings from "./PersonalSavings";
 import HomeActions from "./HomeActions";
 import SolarPanelNote from "./SolarPanelNote";
+import AddressAlerts from "./AddressAlerts";
 import "./CityDetail.css";
 
 interface AddressDetailProps {
   address: AddressResult;
   cities: City[];
+  wildfireHotspots: WildfireHotspot[];
+  wildfireHotspotsLoading: boolean;
+  earthquakes: EarthquakeEvent[];
+  earthquakesLoading: boolean;
   onClose: () => void;
 }
 
-export default function AddressDetail({ address, cities, onClose }: AddressDetailProps) {
+export default function AddressDetail({
+  address,
+  cities,
+  wildfireHotspots,
+  wildfireHotspotsLoading,
+  earthquakes,
+  earthquakesLoading,
+  onClose,
+}: AddressDetailProps) {
   const { city: reference, distanceKm } = nearestCity(address.lat, address.lng, cities);
   const uhi = estimateUHI(reference);
   const [sim, setSim] = useState({ green: 10, albedo: 10, reduction: simulateMitigation(uhi, 10, 10) });
@@ -38,6 +53,15 @@ export default function AddressDetail({ address, cities, onClose }: AddressDetai
           ×
         </button>
       </div>
+
+      <AddressAlerts
+        lat={address.lat}
+        lng={address.lng}
+        wildfireHotspots={wildfireHotspots}
+        wildfireHotspotsLoading={wildfireHotspotsLoading}
+        earthquakes={earthquakes}
+        earthquakesLoading={earthquakesLoading}
+      />
 
       <section className="city-detail__section city-detail__urgency">
         <p>
