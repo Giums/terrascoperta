@@ -10,6 +10,8 @@ import CostEstimator from "./CostEstimator";
 import PersonalSavings from "./PersonalSavings";
 import HomeActions from "./HomeActions";
 import SolarPanelNote from "./SolarPanelNote";
+import HydrogeologicalRisk from "./HydrogeologicalRisk";
+import DesertificationRisk from "./DesertificationRisk";
 import "./CityDetail.css";
 
 interface CityDetailProps {
@@ -48,6 +50,9 @@ export default function CityDetail({ city, onClose }: CityDetailProps) {
         <h3>Estate di ieri vs estate di oggi</h3>
         <HistoricalComparison lat={city.lat} lng={city.lng} />
       </section>
+
+      <HydrogeologicalRisk lat={city.lat} lng={city.lng} />
+      <DesertificationRisk lat={city.lat} lng={city.lng} />
 
       <section className="city-detail__section city-detail__urgency">
         <p>

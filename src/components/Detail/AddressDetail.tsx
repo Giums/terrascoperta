@@ -14,6 +14,8 @@ import PersonalSavings from "./PersonalSavings";
 import HomeActions from "./HomeActions";
 import SolarPanelNote from "./SolarPanelNote";
 import AddressAlerts from "./AddressAlerts";
+import HydrogeologicalRisk from "./HydrogeologicalRisk";
+import DesertificationRisk from "./DesertificationRisk";
 import "./CityDetail.css";
 
 interface AddressDetailProps {
@@ -62,6 +64,9 @@ export default function AddressDetail({
         earthquakes={earthquakes}
         earthquakesLoading={earthquakesLoading}
       />
+
+      <HydrogeologicalRisk lat={address.lat} lng={address.lng} />
+      <DesertificationRisk lat={address.lat} lng={address.lng} />
 
       <section className="city-detail__section city-detail__urgency">
         <p>

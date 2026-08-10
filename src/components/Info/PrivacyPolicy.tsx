@@ -11,10 +11,11 @@ interface PrivacyPolicyProps {
  * dalla lingua del browser, in attesa di un i18n completo (vedi README, Roadmap).
  *
  * Contenuto basato su un audit reale del codice (non assunto): nessun cookie,
- * nessun localStorage/sessionStorage, nessun analytics/tracking, nessun
- * account o form che salva dati. L'unico punto di dato personale è la ricerca
- * indirizzo, che manda la query e l'IP del visitatore direttamente al browser
- * verso Nominatim/OpenStreetMap (non tramite il nostro backend).
+ * nessun localStorage/sessionStorage, nessun account o form che salva dati.
+ * L'unico punto di dato personale è la ricerca indirizzo, che manda la query
+ * e l'IP del visitatore direttamente al browser verso Nominatim/OpenStreetMap
+ * (non tramite il nostro backend). Analytics: Umami, cookieless, IP hashato
+ * con salt che ruota ogni giorno — vedi sezione dedicata.
  */
 export default function PrivacyPolicy({ onClose }: PrivacyPolicyProps) {
   return (
@@ -40,7 +41,22 @@ export default function PrivacyPolicy({ onClose }: PrivacyPolicyProps) {
         </p>
         <p>
           <strong>Cookie:</strong> nessuno. Il sito non imposta cookie, non usa localStorage né
-          sessionStorage, non ha strumenti di analytics o tracciamento di alcun tipo.
+          sessionStorage.
+        </p>
+        <p>
+          <strong>Analytics:</strong> usiamo{" "}
+          <a href="https://umami.is" target="_blank" rel="noreferrer">
+            Umami
+          </a>
+          , uno strumento di analisi del traffico privacy-first e open source. Non usa cookie, non
+          usa localStorage/sessionStorage, non crea un identificativo persistente che ti segua tra
+          visite o siti diversi. Raccoglie in forma aggregata: pagina visitata, referrer, paese ed
+          eventualmente città (dedotti dall'IP), tipo di dispositivo e browser. Il tuo indirizzo IP
+          viene hashato insieme a uno "salt" che cambia ogni giorno e non viene conservato in
+          chiaro né associato in modo permanente a te. Base giuridica: legittimo interesse (art.
+          6.1.f GDPR) a capire in forma aggregata come viene usato il sito, dato che non
+          identifica singoli visitatori. Non essendoci profilazione né identificatori persistenti,
+          non è richiesto un banner di consenso cookie per questo trattamento.
         </p>
         <p>
           <strong>Account e form:</strong> non esistono. Non puoi registrarti, non c'è login, non
@@ -64,9 +80,9 @@ export default function PrivacyPolicy({ onClose }: PrivacyPolicyProps) {
         <p>
           <strong>Altre API pubbliche contattate</strong> (dal tuo browser o dal nostro backend, a
           seconda della funzione): Copernicus/Sentinel Hub, Open-Meteo, INGV, NASA FIRMS, OpenSky
-          Network, Copernicus EMS. Queste richieste riguardano coordinate geografiche di città,
-          fiumi, vulcani o eventi pubblici — non identificano te, salvo l'IP inevitabilmente
-          presente in ogni richiesta HTTP, come per qualunque sito web.
+          Network, Copernicus EMS, ISPRA IdroGEO. Queste richieste riguardano coordinate
+          geografiche di città, fiumi, vulcani o eventi pubblici — non identificano te, salvo l'IP
+          inevitabilmente presente in ogni richiesta HTTP, come per qualunque sito web.
         </p>
         <p>
           <strong>Log del server:</strong> se il sito è ospitato dietro un server web proprio
@@ -106,7 +122,22 @@ export default function PrivacyPolicy({ onClose }: PrivacyPolicyProps) {
         </p>
         <p>
           <strong>Cookies:</strong> none. The site sets no cookies, uses no localStorage or
-          sessionStorage, and has no analytics or tracking tools of any kind.
+          sessionStorage.
+        </p>
+        <p>
+          <strong>Analytics:</strong> we use{" "}
+          <a href="https://umami.is" target="_blank" rel="noreferrer">
+            Umami
+          </a>
+          , a privacy-first, open-source traffic analytics tool. It sets no cookies, uses no
+          localStorage/sessionStorage, and creates no persistent identifier that follows you
+          across visits or sites. It collects, in aggregate form: page visited, referrer, country
+          and possibly city (derived from IP), device type and browser. Your IP address is hashed
+          together with a salt that changes daily and is never stored in plain text or
+          permanently linked to you. Legal basis: legitimate interest (GDPR art. 6.1.f) in
+          understanding, in aggregate, how the site is used, since it doesn't identify individual
+          visitors. Since there's no profiling or persistent identifiers, no cookie consent banner
+          is required for this processing.
         </p>
         <p>
           <strong>Accounts and forms:</strong> none exist. You can't register, there's no login,
@@ -129,9 +160,9 @@ export default function PrivacyPolicy({ onClose }: PrivacyPolicyProps) {
         <p>
           <strong>Other public APIs contacted</strong> (from your browser or our backend,
           depending on the feature): Copernicus/Sentinel Hub, Open-Meteo, INGV, NASA FIRMS,
-          OpenSky Network, Copernicus EMS. These requests concern geographic coordinates of
-          cities, rivers, volcanoes, or public events — they don't identify you, aside from the IP
-          address inherent to any HTTP request, as with any website.
+          OpenSky Network, Copernicus EMS, ISPRA IdroGEO. These requests concern geographic
+          coordinates of cities, rivers, volcanoes, or public events — they don't identify you,
+          aside from the IP address inherent to any HTTP request, as with any website.
         </p>
         <p>
           <strong>Server logs:</strong> if the site is hosted behind its own web server (Nginx or

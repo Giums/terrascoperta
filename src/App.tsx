@@ -120,8 +120,8 @@ function App() {
   // inclusa) mentre l'utente sta su una scheda che non li usa.
   const { aircraft: canadairAircraft } = useCanadairPositions(module === "incendi");
   // Anche quando è selezionato un indirizzo (pannello "Allerte vicino a te" in
-  // AddressDetail) — serve il dato live indipendentemente dal modulo attivo,
-  // dato che la ricerca indirizzo vive nel modulo Calore.
+  // AddressDetail) — la ricerca è raggiungibile da qualunque modulo, quindi
+  // il dato serve indipendentemente da quale sia il modulo attivo.
   const { hotspots: wildfireHotspots, loading: wildfireHotspotsLoading } = useWildfireHotspots(
     module === "incendi" || module === "vulcani" || Boolean(selectedAddress),
   );
@@ -307,13 +307,11 @@ function App() {
                 </button>
               ))}
             </div>
+            <UnifiedSearch cities={cities} onSelectCity={selectCity} onSelectAddress={selectAddress} />
             {module === "calore" && (
-              <>
-                <UnifiedSearch cities={cities} onSelectCity={selectCity} onSelectAddress={selectAddress} />
-                <button type="button" className="app-info-button" onClick={openInfo}>
-                  {t("app.whatIsUHI")}
-                </button>
-              </>
+              <button type="button" className="app-info-button" onClick={openInfo}>
+                {t("app.whatIsUHI")}
+              </button>
             )}
             <button type="button" className="app-info-button" onClick={openPrivacy}>
               {t("app.privacyButton")}
@@ -334,7 +332,9 @@ function App() {
             <SatelliteOverlay layer={layer} date={date} />
             <SatelliteLoadingIndicator />
             <MapCenterTracker onChange={setMapCenter} />
-            {module === "calore" && <CityMarkers cities={cities} onSelect={selectCity} />}
+            {(module === "calore" || module === "desertificazione" || module === "idrogeologico") && (
+              <CityMarkers cities={cities} onSelect={selectCity} />
+            )}
             {module === "acqua" && <WaterBodyMarkers waterBodies={waterBodies} onSelect={selectWaterBody} />}
             {module === "acqua" && (
               <MediterraneanMarkers zones={mediterraneanZones} onSelect={selectMedZone} />
