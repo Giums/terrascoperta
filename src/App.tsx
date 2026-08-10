@@ -252,7 +252,11 @@ function App() {
       onClose={() => setSelectedAddress(null)}
     />
   ) : selectedCity ? (
-    <CityDetail city={selectedCity} onClose={() => setSelectedCity(null)} />
+    <CityDetail
+      city={selectedCity}
+      focus={module === "desertificazione" || module === "idrogeologico" ? module : "calore"}
+      onClose={() => setSelectedCity(null)}
+    />
   ) : selectedWaterBody ? (
     <WaterBodyDetail waterBody={selectedWaterBody} onClose={() => setSelectedWaterBody(null)} />
   ) : selectedMedZone ? (
