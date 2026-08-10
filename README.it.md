@@ -12,8 +12,8 @@ Un sito web interattivo ed educativo che mostra fenomeni climatici e ambientali 
 - 💧 **Acqua** — fiumi e laghi principali, case study su siccità/restringimento, livello idrometrico live per la Lombardia (sensori ARPA), temperatura del mare regionale (6 zone costiere, la più vicina a dove stai guardando sulla mappa), overlay satellitare NDWI per vedere l'acqua superficiale direttamente, un overlay radar Sentinel-1 SAR che vede sotto le nuvole (l'NDWI ottico no) — utile per la mappatura delle alluvioni durante un temporale — e 14 punti sparsi in tutto il Mediterraneo con temperatura/livello del mare live (Open-Meteo Marine) più una narrazione con fonte su cosa succede alla fauna marina in quel sotto-bacino (ondate di calore marine, tropicalizzazione, fioriture di meduse — fenomeni reali documentati, non dati live).
 - 🌋 **Vulcani** — Etna, Vesuvio, Stromboli, Campi Flegrei; sismicità live vicino a ognuno (INGV), link alle webcam ufficiali (galleria foto incorporata per Etna/Stromboli, link diretto per gli altri), overlay satellitare SWIR per calore/colate laviche, e **overlay SO₂ + Indice Aerosol (Sentinel-5P/TROPOMI)** che mostrano dove sta andando un pennacchio vulcanico — più un link a Copernicus CAMS per le previsioni orarie di dispersione della cenere, e (solo Etna) un approfondimento reale sulle chiusure dell'aeroporto di Catania per cenere vulcanica.
 - 🔥 **Incendi** — case study storici, overlay satellitare NBR per le cicatrici da incendio, **focolai live** (VIIRS/NASA FIRMS, ultime 24h, ognuno cliccabile), e **posizioni live della flotta antincendio Canadair/Erickson** con traccia di volo al click (vedi sotto).
-- 🏜️ **Desertificazione** — aree classificate a rischio da ISPRA, overlay NDVI per vedere lo stress della vegetazione direttamente.
-- 🌊 **Rischio idrogeologico** — come incendi e desertificazione portano a suolo nudo e alluvioni lampo/frane, dati di rischio ISPRA, e un rimando a EGMS (servizio Copernicus di movimento del suolo) per le vere misurazioni di subsidenza.
+- 🏜️ **Desertificazione** — aree classificate a rischio da ISPRA, overlay NDVI per vedere lo stress della vegetazione direttamente, e (cercando un indirizzo o cliccando una città) una **lettura NDVI live su quel punto esatto** — vedi sotto.
+- 🌊 **Rischio idrogeologico** — come incendi e desertificazione portano a suolo nudo e alluvioni lampo/frane, dati di rischio ISPRA, un rimando a EGMS (servizio Copernicus di movimento del suolo) per le vere misurazioni di subsidenza, e (cercando un indirizzo o cliccando una città) un **controllo live del rischio frana/alluvione su quel punto esatto** — vedi sotto.
 - 🌍 **Terremoti** — sismicità live su tutta Italia (INGV, ultimi 7 giorni, magnitudo ≥ 2.0), una spiegazione del perché esistono scale di magnitudo diverse (ML/Mw/Md) e di come la magnitudo differisca dalla scala di intensità Mercalli.
 
 Tutte le stime sono dichiarate esplicitamente come modelli, non misurazioni — vedi [Metodologia](#metodologia-e-fonti) qui sotto. Ogni modulo legato a un rischio mostra anche indicazioni di sicurezza ufficiali (fonte Protezione Civile / iononrischio.gov.it, non scritte a memoria) e, dove rilevante, un avviso live Copernicus EMS (vedi sotto).
@@ -26,6 +26,17 @@ Vulcani, Incendi, Rischio idrogeologico e Terremoti controllano, all'apertura, s
 - **Corrispondenza di fase**: conta solo `drmPhase: "response"` (un'emergenza acuta, appena dichiarata) — le attivazioni `"preparedness"` e `"recovery"` sono prodotti EMS legittimi ma possono restare aperte per mesi e non significano "sta succedendo qualcosa qui adesso", quindi sono escluse.
 
 Se non c'è corrispondenza, non si mostra nulla — niente sezione vuota, niente placeholder. Il backend fa da proxy verso `mapping.emergency.copernicus.eu` (l'API non ha CORS), con cache di 15 minuti.
+
+### Controlli live per punto: rischio idrogeologico e desertificazione
+
+Cerca un indirizzo, o clicca un marker città, e il pannello di dettaglio controlla quel **punto esatto** su due fonti live — non i marker fissi dei casi studio che quei due moduli mostrano di default:
+
+- **Rischio idrogeologico**: interroga il WMS pubblico di ISPRA IdroGEO (`idrogeo.isprambiente.it`, il mosaico nazionale PAI) via `GetFeatureInfo`, sia per la pericolosità da frana (`idrogeo:pericolosita`, classificazione IFFI/PAI P1–P4) che per quella da alluvione (`idrogeo:pericolosita_alluvioni`, P1–P3) su quel punto.
+- **Salute della vegetazione / desertificazione**: interroga la **Statistical API** di Copernicus Data Space per una media NDVI live da Sentinel-2 su una piccola area (~500m) intorno al punto, ultimi 45 giorni — riusa lo stesso token OAuth a vita breve già emesso per gli overlay satellitari (`useSentinelToken`), il client secret non tocca mai il browser.
+
+Entrambe sono semplici `fetch` lato client verso endpoint pubblici con CORS aperto (verificato dal vivo, non assunto); il pannello mostra un bordo evidenziato quando trova un rischio/stress reale, e si nasconde del tutto se Sentinel Hub non è configurato in quel deployment.
+
+La barra di ricerca indirizzo/città è ora raggiungibile dall'header di ogni modulo, non solo Calore. I marker delle città sono cliccabili in Calore, Desertificazione e Rischio idrogeologico (gli altri moduli mantengono i propri marker dedicati). Il pannello di dettaglio città si adatta al modulo da cui l'hai aperto: Calore mostra la scheda completa UHI/simulatore/costi/risparmi; Desertificazione e Rischio idrogeologico mostrano solo il meteo live più il loro unico controllo live pertinente — il resto dei contenuti pensati per Calore viene tolto perché non rilevante lì.
 
 ### Tracking live dei Canadair
 
@@ -47,6 +58,8 @@ Il modulo Incendi mostra le posizioni in tempo reale della flotta antincendio de
   - Sentinel-1 GRD (10-20m): backscatter SAR VV, mappatura alluvioni che penetra le nuvole
 - **Previsioni atmosferiche:** Copernicus CAMS (solo link per le previsioni orarie di dispersione cenere/SO₂ — i dati grezzi sono GRIB/NetCDF via un'API orientata a Python senza un WMS pronto trovato, quindi resta un link invece di un layer incorporato; vedi [Roadmap](#roadmap))
 - **Movimento del suolo:** EGMS, Copernicus Land Monitoring Service (solo link — distribuito come vettoriale/CSV scaricabile, nessun WMS pubblico anonimo trovato con nomi di layer stabili, quindi anche questo resta un link invece di un layer incorporato)
+- **Statistiche puntuali/areali:** Statistical API di Copernicus Data Space (`sh.dataspace.copernicus.eu/api/v1/statistics`) — media NDVI live da Sentinel-2 su una piccola area intorno a un indirizzo/città cercato, per il controllo puntuale del modulo Desertificazione (vedi [sopra](#controlli-live-per-punto-rischio-idrogeologico-e-desertificazione))
+- **Mosaico pericolosità idrogeologica:** WMS ISPRA IdroGEO (`idrogeo.isprambiente.it`, layer nazionali PAI frane/alluvioni) — controllo puntuale live per il modulo Rischio idrogeologico (vedi [sopra](#controlli-live-per-punto-rischio-idrogeologico-e-desertificazione))
 - **Mappatura di emergenza:** API delle attivazioni Copernicus EMS Rapid Mapping (`mapping.emergency.copernicus.eu`) — vedi [sopra](#avvisi-live-sulle-attivazioni-copernicus-ems)
 - **Dati meteo:** Open-Meteo (nessuna API key, CORS abilitato), inclusa la Marine API per la temperatura del mare
 - **Dati idrometrici:** rete di sensori live ARPA Lombardia (dataset Socrata `647i-nhxk`) per il livello di fiumi/laghi — solo Lombardia; un giro su 9 regioni in una sessione precedente non ha trovato un'API live equivalente altrove, servirebbe scraping
@@ -167,20 +180,22 @@ src/
 │   ├── Map/        MapContainer, {City,WaterBody,Volcano,Fire,Desertification,HydroRisk,Earthquake}Markers,
 │   │                CanadairMarkers, WildfireHotspotMarkers, DotMarker (marker condiviso),
 │   │                SatelliteOverlay, LayerControls, MapCenterTracker, FlyTo
-│   ├── Detail/      CityDetail, WaterBodyDetail, VolcanoDetail, FireDetail, HotspotDetail,
-│   │                DesertificationDetail, HydroRiskDetail, EarthquakeDetail,
-│   │                {Fire,Earthquake,HydroRisk}SafetyInfo, EmsActivationNote,
+│   ├── Detail/      CityDetail, AddressDetail, WaterBodyDetail, VolcanoDetail, FireDetail,
+│   │                HotspotDetail, DesertificationDetail, HydroRiskDetail, EarthquakeDetail,
+│   │                {Fire,Earthquake,HydroRisk}SafetyInfo, EmsActivationNote, AddressAlerts,
+│   │                HydrogeologicalRisk, DesertificationRisk (controlli live per punto, vedi sopra),
 │   │                WeatherLive, Simulator, CostEstimator, PersonalSavings, HomeActions,
 │   │                HistoricalComparison, SolarPanelNote, DissipationChart
-│   ├── Info/        InfoPanel, UHIExplainer, AlbedoExplainer
-│   ├── Search/      CitySearch, AddressSearch
+│   ├── Info/        InfoPanel, PrivacyPolicy, UHIExplainer, AlbedoExplainer
+│   ├── Search/      UnifiedSearch
 │   └── Layout/      Shell
-├── data/            cities, water-bodies, volcanoes, fires, desertification-zones,
-│                    hydro-risk, canadair-fleet
+├── data/            cities, water-bodies, mediterranean-zones, volcanoes, fires,
+│                    desertification-zones, hydro-risk, canadair-fleet
 ├── hooks/           useWeather, useSeismicity, useSentinel, useCanadairPositions,
 │                    useCanadairTrack, useWildfireHotspots, useItalyEarthquakes,
 │                    useVolcanoWebcams, useWaterLevel, useMarineTrend, useSeasonalTrend,
-│                    useHistoricalComparison, useEmsActivations
+│                    useHistoricalComparison, useEmsActivations, useMarineConditions,
+│                    useHydrogeologicalRisk, useDesertificationRisk
 └── utils/           uhi-model, simulator, costs, satellite-layers, dissipation-model,
                      volcano-activity, geo
 server/index.ts       Backend Express — scambio token OAuth2 Sentinel Hub, proxy OpenSky
@@ -195,7 +210,7 @@ proxy Nginx che inoltra `/api/*`. In sviluppo, Vite fa da proxy per `/api` verso
 
 ## Metodologia e fonti
 
-L'intensità UHI mostrata per ogni città è una **stima statistica**, non una misurazione satellitare, basata su popolazione, latitudine, prossimità alla costa ed effetti di inversione termica della Pianura Padana (vedi `src/utils/uhi-model.ts`). Il simulatore di mitigazione e lo stimatore di costi/risparmi sono anch'essi modelli di ordine di grandezza (`src/utils/simulator.ts`, `src/utils/costs.ts`). I case study di acqua, incendi, desertificazione e rischio idrogeologico sono narrazioni con fonte citata (ISPRA, EFFIS, bollettini ARPA regionali, Copernicus EMS), non statistiche calcolate in tempo reale — ogni pannello di dettaglio cita la propria fonte. Le indicazioni di sicurezza vengono da protezionecivile.gov.it e iononrischio.gov.it, non scritte a memoria.
+L'intensità UHI mostrata per ogni città è una **stima statistica**, non una misurazione satellitare, basata su popolazione, latitudine, prossimità alla costa ed effetti di inversione termica della Pianura Padana (vedi `src/utils/uhi-model.ts`). Il simulatore di mitigazione e lo stimatore di costi/risparmi sono anch'essi modelli di ordine di grandezza (`src/utils/simulator.ts`, `src/utils/costs.ts`). I case study di acqua, incendi, desertificazione e rischio idrogeologico sono narrazioni con fonte citata (ISPRA, EFFIS, bollettini ARPA regionali, Copernicus EMS), non statistiche calcolate in tempo reale — ogni pannello di dettaglio cita la propria fonte. Due eccezioni: cercare un indirizzo o cliccare una città fa scattare anche un controllo davvero live e puntuale per desertificazione (NDVI Sentinel-2) e rischio idrogeologico (mosaico pericolosità PAI di ISPRA IdroGEO) — vedi [sopra](#controlli-live-per-punto-rischio-idrogeologico-e-desertificazione). Le indicazioni di sicurezza vengono da protezionecivile.gov.it e iononrischio.gov.it, non scritte a memoria.
 
 - Oke, T.R. (1982). *The energetic basis of the urban heat island.* Quarterly Journal of the Royal Meteorological Society, 108(455), 1-24.
 - Bowler, D.E. et al. (2010). *Urban greening to cool towns and cities: A systematic review of the empirical evidence.* Landscape and Urban Planning, 97(3), 147-155.
@@ -219,7 +234,7 @@ In produzione, imposta le stesse variabili come vere variabili d'ambiente sul se
 
 ## Privacy
 
-Un'informativa privacy bilingue (IT/EN) è disponibile dal bottone "Privacy" in header (`src/components/Info/PrivacyPolicy.tsx`), basata su un audit reale del codice: nessun cookie, nessun localStorage/analytics/tracking, nessun account o form che salva dati. L'unico punto di contatto reale è la ricerca indirizzo, che manda la query digitata direttamente dal browser a Nominatim/OpenStreetMap. **Prima di pubblicare il sito, compila il placeholder `[inserire qui un contatto email]`** in quel componente con un contatto vero — non l'ho impostato automaticamente perché pubblicare un'email personale è una tua scelta, non un default da assumere. È una descrizione tecnica in buona fede per un piccolo progetto personale, non una consulenza legale.
+Un'informativa privacy bilingue (IT/EN) è disponibile dal bottone "Privacy" in header (`src/components/Info/PrivacyPolicy.tsx`), basata su un audit reale del codice: nessun cookie, nessun localStorage, nessun account o form che salva dati, nessun analytics attivo oggi. L'informativa contiene già una sezione Umami scritta in anticipo per quando/se verrà attivato — **al momento è aspirazionale, nessuno script Umami è collegato davvero all'app**, vedi [Roadmap](#roadmap). La ricerca indirizzo manda la query digitata direttamente dal browser a Nominatim/OpenStreetMap; i due controlli live per punto sopra mandano le coordinate cercate direttamente a ISPRA IdroGEO e Copernicus, stesso schema (browser-verso-provider, non tramite il nostro backend). **Prima di pubblicare il sito, compila il placeholder `[inserire qui un contatto email]`** in quel componente con un contatto vero — non l'ho impostato automaticamente perché pubblicare un'email personale è una tua scelta, non un default da assumere. È una descrizione tecnica in buona fede per un piccolo progetto personale, non una consulenza legale.
 
 ## Roadmap
 
@@ -234,6 +249,7 @@ Un'informativa privacy bilingue (IT/EN) è disponibile dal bottone "Privacy" in 
 - Controllo attivazioni Copernicus EMS anche per altre categorie meno urgenti (`storm`, `industrial`, `environment`), se mai esisterà un modulo per loro.
 - Copertura idrometrica oltre la Lombardia — nessuna API live trovata in un giro su 9 regioni; servirebbe scraping dei siti ARPA regionali uno per uno.
 - Deploy: dominio, configurazione Nginx sul server, `server/index.ts` in esecuzione come servizio permanente (pm2/systemd).
+- Analytics Umami: la Privacy Policy ha già la sezione scritta (cookieless, salt IP che ruota ogni giorno, base legittimo interesse), ma lo script di tracciamento vero e proprio non è ancora aggiunto all'app.
 
 ## Licenza
 
