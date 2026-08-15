@@ -1,0 +1,10 @@
+services:
+  api:
+    build: .
+    restart: unless-stopped
+    env_file:
+      - .env.production
+    # Solo su localhost: Nginx sull'host fa da reverse proxy, il container
+    # non deve essere raggiungibile direttamente da fuori (vedi DEPLOY_TODO.md).
+    ports:
+      - "127.0.0.1:3001:3001"
