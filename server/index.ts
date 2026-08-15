@@ -27,6 +27,15 @@ try {
 const app = express();
 const PORT = Number(process.env.PORT ?? 3001);
 
+// Usato dalla pipeline di deploy (deploy.sh sul server) per verificare che il
+// processo sia vivo e risponda prima di considerare un deploy riuscito — non
+// controlla le API esterne (Sentinel Hub, FIRMS, ecc.), solo che Express stesso
+// sia in piedi. Un controllo più pesante darebbe falsi negativi se un servizio
+// terzo è giù, che non è colpa del deploy.
+app.get("/api/health", (_req, res) => {
+  res.json({ ok: true });
+});
+
 // Il client ID non è sensibile (è esposto anche al frontend), quindi vive nella
 // stessa variabile VITE_-prefixata usata da Vite — solo il secret ha un nome suo.
 const SENTINEL_CLIENT_ID = process.env.VITE_SENTINEL_CLIENT_ID;

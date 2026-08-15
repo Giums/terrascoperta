@@ -1,0 +1,36 @@
+name: Deploy to production
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  # typecheck+lint+build prima di toccare il server — non deployare mai codice
+  # che non passa nemmeno la build locale.
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - run: npm run lint
+
+  deploy:
+    needs: verify
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy via SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          # Host key fissata (non accettata al volo al primo collegamento) —
+          # presa una volta da una connessione già verificata.
+          echo "[${{ secrets.DEPLOY_HOST }}]:${{ secrets.DEPLOY_PORT }} ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAID92Y8yJ/8Yu7+NEyaigOMMpjE36YeD9h/bzXx/1jSCy" > ~/.ssh/known_hosts
+          # La chiave sul server ha un forced command (~/deploy.sh) — qualunque
+          # comando passato qui viene ignorato lato server, gira solo quello.
+          ssh -i ~/.ssh/deploy_key -p ${{ secrets.DEPLOY_PORT }} ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} "deploy"
