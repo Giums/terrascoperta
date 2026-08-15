@@ -241,7 +241,7 @@ In production, set the same variables as real environment variables on the serve
 
 ## Privacy
 
-A bilingual (IT/EN) Privacy notice is available from the "Privacy" button in the header (`src/components/Info/PrivacyPolicy.tsx`), based on an actual audit of the codebase: no cookies, no localStorage, no accounts or forms that persist data, no analytics running today. The notice already documents an Umami section pre-written for if/when analytics is added — **currently aspirational, no Umami script is actually wired into the app yet**, see [Roadmap](#roadmap). The address search sends the typed query directly from the browser to Nominatim/OpenStreetMap; the two live per-point checks above send the searched coordinates directly to ISPRA IdroGEO and Copernicus, same pattern (browser-to-provider, not through our backend). Contact: `info@icarom.net`. This is a good-faith technical description for a small personal project, not legal advice.
+A bilingual (IT/EN) Privacy notice is available from the "Privacy" button in the header (`src/components/Info/PrivacyPolicy.tsx`), based on an actual audit of the codebase: no cookies, no localStorage, no accounts or forms that persist data. Analytics is Umami, self-hosted on our own server in Milan (`stats.icarom.net`): cookieless, no localStorage, IP hashed with a daily-rotating salt, no third-party analytics provider and no traffic data leaving the EU — see the Analytics section of the notice. The address search sends the typed query directly from the browser to Nominatim/OpenStreetMap; the two live per-point checks above send the searched coordinates directly to ISPRA IdroGEO and Copernicus, same pattern (browser-to-provider, not through our backend). Contact: `info@icarom.net`. This is a good-faith technical description for a small personal project, not legal advice.
 
 ## Roadmap
 
@@ -255,8 +255,6 @@ A bilingual (IT/EN) Privacy notice is available from the "Privacy" button in the
 - An air-quality module (NO₂/CO/CH₄ via Sentinel-5P) — a full new module, not a small addition, so treated as a separate future initiative rather than bundled into existing ones.
 - Copernicus EMS activation check for other, less time-critical categories (`storm`, `industrial`, `environment`) if a module for them ever exists.
 - Hydrometric coverage beyond Lombardia — no live API found in a 9-region sweep; would need scraping regional ARPA sites individually.
-- Deploy: domain, server Nginx config, `server/index.ts` running as a permanent service (pm2/systemd).
-- Umami analytics: the Privacy Policy already has the section written (cookieless, daily-rotating IP salt, legitimate-interest basis), but the actual tracking script isn't added to the app yet.
 
 ## License
 

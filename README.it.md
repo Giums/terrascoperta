@@ -241,7 +241,7 @@ In produzione, imposta le stesse variabili come vere variabili d'ambiente sul se
 
 ## Privacy
 
-Un'informativa privacy bilingue (IT/EN) è disponibile dal bottone "Privacy" in header (`src/components/Info/PrivacyPolicy.tsx`), basata su un audit reale del codice: nessun cookie, nessun localStorage, nessun account o form che salva dati, nessun analytics attivo oggi. L'informativa contiene già una sezione Umami scritta in anticipo per quando/se verrà attivato — **al momento è aspirazionale, nessuno script Umami è collegato davvero all'app**, vedi [Roadmap](#roadmap). La ricerca indirizzo manda la query digitata direttamente dal browser a Nominatim/OpenStreetMap; i due controlli live per punto sopra mandano le coordinate cercate direttamente a ISPRA IdroGEO e Copernicus, stesso schema (browser-verso-provider, non tramite il nostro backend). Contatto: `info@icarom.net`. È una descrizione tecnica in buona fede per un piccolo progetto personale, non una consulenza legale.
+Un'informativa privacy bilingue (IT/EN) è disponibile dal bottone "Privacy" in header (`src/components/Info/PrivacyPolicy.tsx`), basata su un audit reale del codice: nessun cookie, nessun localStorage, nessun account o form che salva dati. Gli analytics sono Umami, self-hosted su un nostro server a Milano (`stats.icarom.net`): cookieless, niente localStorage, IP hashato con salt che ruota ogni giorno, nessun fornitore terzo di analytics e nessun dato di traffico fuori dall'UE — vedi la sezione Analytics dell'informativa. La ricerca indirizzo manda la query digitata direttamente dal browser a Nominatim/OpenStreetMap; i due controlli live per punto sopra mandano le coordinate cercate direttamente a ISPRA IdroGEO e Copernicus, stesso schema (browser-verso-provider, non tramite il nostro backend). Contatto: `info@icarom.net`. È una descrizione tecnica in buona fede per un piccolo progetto personale, non una consulenza legale.
 
 ## Roadmap
 
@@ -255,8 +255,6 @@ Un'informativa privacy bilingue (IT/EN) è disponibile dal bottone "Privacy" in 
 - Un modulo qualità dell'aria (NO₂/CO/CH₄ via Sentinel-5P) — un modulo intero nuovo, non una piccola aggiunta, quindi trattato come iniziativa futura a sé piuttosto che incluso in quelli esistenti.
 - Controllo attivazioni Copernicus EMS anche per altre categorie meno urgenti (`storm`, `industrial`, `environment`), se mai esisterà un modulo per loro.
 - Copertura idrometrica oltre la Lombardia — nessuna API live trovata in un giro su 9 regioni; servirebbe scraping dei siti ARPA regionali uno per uno.
-- Deploy: dominio, configurazione Nginx sul server, `server/index.ts` in esecuzione come servizio permanente (pm2/systemd).
-- Analytics Umami: la Privacy Policy ha già la sezione scritta (cookieless, salt IP che ruota ogni giorno, base legittimo interesse), ma lo script di tracciamento vero e proprio non è ancora aggiunto all'app.
 
 ## Licenza
 

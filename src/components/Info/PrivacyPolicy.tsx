@@ -14,8 +14,9 @@ interface PrivacyPolicyProps {
  * nessun localStorage/sessionStorage, nessun account o form che salva dati.
  * L'unico punto di dato personale è la ricerca indirizzo, che manda la query
  * e l'IP del visitatore direttamente al browser verso Nominatim/OpenStreetMap
- * (non tramite il nostro backend). Analytics: Umami, cookieless, IP hashato
- * con salt che ruota ogni giorno — vedi sezione dedicata.
+ * (non tramite il nostro backend). Analytics: Umami self-hosted su stats.icarom.net
+ * (server nostro, Milano), cookieless, IP hashato con salt che ruota ogni giorno —
+ * vedi sezione dedicata.
  */
 export default function PrivacyPolicy({ onClose }: PrivacyPolicyProps) {
   return (
@@ -56,7 +57,10 @@ export default function PrivacyPolicy({ onClose }: PrivacyPolicyProps) {
           chiaro né associato in modo permanente a te. Base giuridica: legittimo interesse (art.
           6.1.f GDPR) a capire in forma aggregata come viene usato il sito, dato che non
           identifica singoli visitatori. Non essendoci profilazione né identificatori persistenti,
-          non è richiesto un banner di consenso cookie per questo trattamento.
+          non è richiesto un banner di consenso cookie per questo trattamento. L'istanza Umami è
+          self-hosted su un nostro server in Italia (Milano): i dati di traffico non escono
+          dall'Unione Europea e non c'è nessun fornitore terzo di analytics a cui vengano
+          trasmessi.
         </p>
         <p>
           <strong>Account e form:</strong> non esistono. Non puoi registrarti, non c'è login, non
@@ -137,7 +141,9 @@ export default function PrivacyPolicy({ onClose }: PrivacyPolicyProps) {
           permanently linked to you. Legal basis: legitimate interest (GDPR art. 6.1.f) in
           understanding, in aggregate, how the site is used, since it doesn't identify individual
           visitors. Since there's no profiling or persistent identifiers, no cookie consent banner
-          is required for this processing.
+          is required for this processing. The Umami instance is self-hosted on our own server in
+          Italy (Milan): traffic data never leaves the European Union, and there is no third-party
+          analytics provider it gets sent to.
         </p>
         <p>
           <strong>Accounts and forms:</strong> none exist. You can't register, there's no login,
