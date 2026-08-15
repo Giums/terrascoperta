@@ -72,7 +72,9 @@ Il modulo Incendi mostra le posizioni in tempo reale della flotta antincendio de
 - **Tracking aerei:** OpenSky Network (ADS-B), identificazione flotta verificata incrociando adsbdb.com
 - **Backend:** Node/Express puro (`server/index.ts`) — pensato per stare dietro un tuo reverse proxy Nginx (`/api/*` inoltrato lì), non legato a Vercel, Netlify o hosting specifici
 - **Linting:** oxlint
+- **Test:** Vitest, unit test sulla logica pura (`src/utils/*.test.ts`) — girano in CI a ogni push su `main`, prima del deploy
 - **Scansione secret:** gitleaks + hook pre-commit, CI su GitHub Actions
+- **Rate limiting:** `express-rate-limit` su ogni route backend che tocca una quota esterna condivisa (Sentinel Hub, NASA FIRMS, OpenSky) — 120 richieste/min/IP sulle tile satellitari (burst legittimi da pan/zoom, per lo più già in cache), 30/min/IP su tutto il resto; `/api/health` esente (usato dall'health check della pipeline di deploy)
 
 ## Per iniziare
 
@@ -173,6 +175,7 @@ npm run server       # avvia il backend con riavvio automatico (sviluppo)
 npm run server:prod  # avvia il backend una volta, senza watcher (produzione)
 npm run build        # type-check (tsc -b, include il backend) e build del frontend
 npm run lint         # esegue oxlint
+npm run test          # esegue Vitest (unit test, src/utils/*.test.ts)
 npm run preview      # anteprima locale della build di produzione del frontend
 ```
 

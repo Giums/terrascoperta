@@ -14,6 +14,7 @@
 //   browser), ma senza passare da qui non c'è modo di mettere in cache le
 //   tile ripetute e ogni vista resta lenta quanto la prima volta.
 import express from "express";
+import rateLimit from "express-rate-limit";
 import { canadairFleet, type AircraftType } from "../src/data/canadair-fleet";
 
 // In produzione le variabili vengono dal servizio (systemd/pm2), non da un
@@ -26,6 +27,40 @@ try {
 
 const app = express();
 const PORT = Number(process.env.PORT ?? 3001);
+
+// In produzione siamo sempre dietro Nginx (vedi DEPLOY_TODO.md) — senza questo,
+// express-rate-limit vedrebbe sempre l'IP di Nginx (127.0.0.1) invece di quello
+// del client reale, e tutti i visitatori condividerebbero lo stesso conteggio.
+// "1" = ci fidiamo di un solo hop davanti a noi (il nostro Nginx), non di una
+// catena arbitraria di proxy che chiunque potrebbe falsificare.
+app.set("trust proxy", 1);
+
+// Le nostre chiavi Sentinel Hub / NASA FIRMS / OpenSky hanno una quota
+// condivisa da *tutti* i visitatori del sito, non per persona — senza un
+// limite, un singolo IP (bot o script impazzito) può esaurirla per tutti.
+// Due livelli, non uno: le tile satellitari sono innocue in burst (un utente
+// che fa pan/zoom sulla mappa ne genera decine in pochi secondi, e la
+// maggior parte sono già in cache — vedi sotto), le altre route esterne no
+// (chiamate una manciata di volte per vista, mai in burst legittimo).
+function rateLimitedJson(_req: express.Request, res: express.Response) {
+  res.status(429).json({ error: "Troppe richieste, riprova tra poco" });
+}
+
+const externalApiLimiter = rateLimit({
+  windowMs: 60_000,
+  limit: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+  handler: rateLimitedJson,
+});
+
+const tileLimiter = rateLimit({
+  windowMs: 60_000,
+  limit: 120,
+  standardHeaders: true,
+  legacyHeaders: false,
+  handler: rateLimitedJson,
+});
 
 // Usato dalla pipeline di deploy (deploy.sh sul server) per verificare che il
 // processo sia vivo e risponda prima di considerare un deploy riuscito — non
@@ -40,7 +75,7 @@ app.get("/api/health", (_req, res) => {
 // stessa variabile VITE_-prefixata usata da Vite — solo il secret ha un nome suo.
 const SENTINEL_CLIENT_ID = process.env.VITE_SENTINEL_CLIENT_ID;
 
-app.get("/api/sentinel-token", async (_req, res) => {
+app.get("/api/sentinel-token", externalApiLimiter, async (_req, res) => {
   // Letto qui, non a livello di modulo: la regola gitleaks "copernicus-client-
   // secret" segnala un token >=20 char accanto a "client_secret" per
   // intercettare un secret incollato per errore, ma si ferma su "process."
@@ -127,7 +162,7 @@ async function getOpenSkyToken(): Promise<string | null> {
   return openSkyToken.value;
 }
 
-app.get("/api/canadair-positions", async (_req, res) => {
+app.get("/api/canadair-positions", externalApiLimiter, async (_req, res) => {
   if (canadairCache && Date.now() - canadairCache.updatedAt < CANADAIR_CACHE_MS) {
     res.json(canadairCache);
     return;
@@ -180,7 +215,7 @@ const trackCache = new Map<string, { path: TrackPoint[]; updatedAt: number }>();
 // /tracks richiede sempre un client autenticato (a differenza di /states/all,
 // qui l'accesso anonimo non è previsto affatto) — senza credenziali OpenSky
 // configurate l'endpoint risponde 503, non un errore silenzioso.
-app.get("/api/canadair-track/:icao24", async (req, res) => {
+app.get<{ icao24: string }>("/api/canadair-track/:icao24", externalApiLimiter, async (req, res) => {
   const icao24 = req.params.icao24.toLowerCase();
   if (!canadairFleet.some((a) => a.icao24 === icao24)) {
     res.status(404).json({ error: "Velivolo non in flotta" });
@@ -267,7 +302,7 @@ function parseFirmsCsv(csv: string): WildfireHotspot[] {
         .filter((h) => Number.isFinite(h.lat) && Number.isFinite(h.lon));
 }
 
-app.get("/api/wildfire-hotspots", async (_req, res) => {
+app.get("/api/wildfire-hotspots", externalApiLimiter, async (_req, res) => {
   const mapKey = process.env.NASA_FIRMS_MAP_KEY;
   if (!mapKey) {
     res.status(503).json({ error: "NASA FIRMS non configurato su questo deployment" });
@@ -301,7 +336,7 @@ app.get("/api/wildfire-hotspots", async (_req, res) => {
 const VOLCANO_THERMAL_CACHE_MS = 10 * 60_000;
 const volcanoThermalCache = new Map<string, { hotspots: WildfireHotspot[]; updatedAt: number }>();
 
-app.get("/api/volcano-thermal-history", async (req, res) => {
+app.get("/api/volcano-thermal-history", externalApiLimiter, async (req, res) => {
   const mapKey = process.env.NASA_FIRMS_MAP_KEY;
   if (!mapKey) {
     res.status(503).json({ error: "NASA FIRMS non configurato su questo deployment" });
@@ -356,7 +391,7 @@ const WEBCAM_GALLERIES: Record<string, string> = {
 const WEBCAM_CACHE_MS = 5 * 60_000;
 const webcamCache = new Map<string, { shots: WebcamShot[]; updatedAt: number }>();
 
-app.get("/api/volcano-webcams/:volcano", async (req, res) => {
+app.get<{ volcano: string }>("/api/volcano-webcams/:volcano", externalApiLimiter, async (req, res) => {
   const galleryUrl = WEBCAM_GALLERIES[req.params.volcano];
   if (!galleryUrl) {
     res.status(404).json({ error: "Nessuna galleria webcam per questo vulcano" });
@@ -413,7 +448,7 @@ let emsCache: { activations: EmsActivation[]; updatedAt: number } | null = null;
 // distanza dal punto che sta guardando. Nessun filtro geografico lato API
 // verificato funzionante (il parametro ?country= viene ignorato in silenzio),
 // quindi il filtro per l'Italia è tutto client-side via haversine.
-app.get("/api/ems-activations", async (_req, res) => {
+app.get("/api/ems-activations", externalApiLimiter, async (_req, res) => {
   if (emsCache && Date.now() - emsCache.updatedAt < EMS_CACHE_MS) {
     res.json(emsCache);
     return;
@@ -490,7 +525,7 @@ const SATELLITE_TILE_CACHE_MS = 12 * 60 * 60_000;
 const SATELLITE_TILE_CACHE_MAX = 2000;
 const satelliteTileCache = new Map<string, TileCacheEntry>();
 
-app.get("/api/satellite-tile/:instance", async (req, res) => {
+app.get("/api/satellite-tile/:instance", tileLimiter, async (req, res) => {
   const { instance } = req.params;
   const queryString = req.url.split("?")[1] ?? "";
   const cacheKey = `${instance}?${queryString}`;

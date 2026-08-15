@@ -72,7 +72,9 @@ The Fires module shows real-time positions of the Protezione Civile's water-bomb
 - **Aircraft tracking:** OpenSky Network (ADS-B), fleet identification cross-checked against adsbdb.com
 - **Backend:** plain Node/Express (`server/index.ts`) — meant to run behind your own Nginx reverse proxy (`/api/*` forwarded to it), not tied to Vercel, Netlify, or any specific host
 - **Linting:** oxlint
+- **Testing:** Vitest, unit tests on pure logic (`src/utils/*.test.ts`) — runs in CI on every push to `main` before deploying
 - **Secret scanning:** gitleaks + pre-commit hooks, GitHub Actions CI
+- **Rate limiting:** `express-rate-limit` on every backend proxy route that touches a shared external quota (Sentinel Hub, NASA FIRMS, OpenSky) — 120 req/min/IP on satellite tiles (legitimate pan/zoom bursts, mostly cache hits anyway), 30 req/min/IP on everything else; `/api/health` is exempt (used by the deploy pipeline's health check)
 
 ## Getting started
 
@@ -173,6 +175,7 @@ npm run server       # start the backend with auto-restart on change (dev)
 npm run server:prod  # start the backend once, no watcher (production)
 npm run build        # type-check (tsc -b, includes the backend) and build the frontend
 npm run lint         # run oxlint
+npm run test          # run Vitest (unit tests, src/utils/*.test.ts)
 npm run preview      # preview the production frontend build locally
 ```
 
