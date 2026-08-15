@@ -1,7 +1,5 @@
 # 🌍 TerraScoperta
 
-*(Nome provvisorio)*
-
 **[🇬🇧 Read in English](README.md)**
 
 Un sito web interattivo ed educativo che mostra fenomeni climatici e ambientali in Italia, usando dati satellitari e sensori pubblici reali. Nato come tracker delle isole di calore urbane (UHI); cresciuto in sette moduli che coprono calore, acqua, vulcani, incendi, desertificazione, rischio idrogeologico e terremoti — tutto costruito da una persona sola su dati pubblici e gratuiti. L'obiettivo non è solo mostrare il problema, ma renderlo azionabile: cosa può fare una città, e — altrettanto importante — cosa può fare un singolo cittadino a casa propria.
