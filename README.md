@@ -1,7 +1,5 @@
 # 🌍 TerraScoperta
 
-*(Provisional name)*
-
 **[🇮🇹 Leggi in italiano](README.it.md)**
 
 An interactive, educational website mapping climate and environmental hazards across Italy, using real public satellite and sensor data. Started as an urban heat island (UHI) tracker; grew into seven modules covering heat, water, volcanoes, fires, desertification, hydrogeological risk, and earthquakes — all built by one person on free, public data. The goal is not just to show the problem, but to make it actionable: what a city can do, and — just as importantly — what a single household can do about it.
