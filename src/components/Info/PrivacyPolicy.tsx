@@ -36,8 +36,8 @@ export default function PrivacyPolicy({ onClose }: PrivacyPolicyProps) {
           non un modello generico.
         </p>
         <p>
-          <strong>Titolare del trattamento:</strong> [inserire qui un contatto email di riferimento
-          per il progetto].
+          <strong>Titolare del trattamento:</strong>{" "}
+          <a href="mailto:info@icarom.net">info@icarom.net</a>.
         </p>
         <p>
           <strong>Cookie:</strong> nessuno. Il sito non imposta cookie, non usa localStorage né
@@ -117,8 +117,8 @@ export default function PrivacyPolicy({ onClose }: PrivacyPolicyProps) {
           generic template.
         </p>
         <p>
-          <strong>Data controller:</strong> [insert a reference contact email for the project
-          here].
+          <strong>Data controller:</strong>{" "}
+          <a href="mailto:info@icarom.net">info@icarom.net</a>.
         </p>
         <p>
           <strong>Cookies:</strong> none. The site sets no cookies, uses no localStorage or
