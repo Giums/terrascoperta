@@ -10,7 +10,7 @@ An interactive, educational website mapping climate and environmental hazards ac
 
 - 🌡️ **Heat** — estimated UHI intensity per Italian city, live weather, a mitigation simulator (green cover / albedo sliders), a cost & savings estimator, historical summer comparison, and a "what you can do at home" section (cool roofs, reflective membranes, green roofs, evaporative AC pre-cooling, solar panel yield gain from cooler roofs, and more).
 - 💧 **Water** — major rivers and lakes, drought/shrinkage case studies, live hydrometric water level for Lombardia (ARPA sensors), regional sea-surface temperature (6 coastal zones, nearest to wherever you're looking on the map), NDWI satellite overlay to see surface water directly, a Sentinel-1 SAR overlay that sees through cloud cover (optical NDWI can't) — useful for flood extent during a storm — and 14 Mediterranean-wide markers with live sea temperature/level (Open-Meteo Marine) plus a sourced narrative on what's happening to marine fauna in that sub-basin (marine heatwaves, tropicalization, jellyfish blooms — real documented phenomena, not live data).
-- 🌋 **Volcanoes** — Etna, Vesuvius, Stromboli, Campi Flegrei; live seismicity near each one (INGV), links to official webcams (embedded photo gallery for Etna/Stromboli, direct link for the others), SWIR satellite overlay for heat/lava flows, and **SO₂ + Aerosol Index overlays (Sentinel-5P/TROPOMI)** showing where a volcanic plume is heading — plus a link to Copernicus CAMS for hourly ash-dispersion forecasts, and (Etna only) real-world context on Catania airport ash closures.
+- 🌋 **Volcanoes** — Etna, Vesuvius, Stromboli, Campi Flegrei; live seismicity near each one (INGV), links to official webcams (embedded photo gallery for Etna/Stromboli, direct link for the others), SWIR satellite overlay for heat/lava flows, **SO₂ + Aerosol Index overlays (Sentinel-5P/TROPOMI)** showing where a volcanic plume is heading, a **day-by-day thermal-signal path** reconstructed from the last 5 days of VIIRS hotspots (see below) — plus a link to Copernicus CAMS for hourly ash-dispersion forecasts, and (Etna only) real-world context on Catania airport ash closures.
 - 🔥 **Fires** — historical case studies, NBR satellite overlay for burn scars, **live wildfire hotspots** (VIIRS/NASA FIRMS, last 24h, each one clickable), and **live positions of Italy's Canadair/Erickson firefighting fleet** with click-to-see flight track (see below).
 - 🏜️ **Desertification** — ISPRA risk-classified areas, NDVI overlay to see vegetation stress directly, and (search an address or click a city) a **live NDVI reading for that exact point** — see below.
 - 🌊 **Hydrogeological risk** — how fire and desertification lead to bare soil and flash floods/landslides, ISPRA risk data, a pointer to EGMS (Copernicus ground-motion service) for real subsidence measurements, and (search an address or click a city) a **live landslide/flood hazard check for that exact point** — see below.
@@ -37,6 +37,10 @@ Search any address, or click a city marker, and its detail panel checks that **e
 Both are plain client-side `fetch` calls against CORS-open public endpoints (verified live, not assumed); the panel gets a highlighted border when a real hazard/stress is found, and hides itself entirely if Sentinel Hub isn't configured for that deployment.
 
 The address/city search bar is reachable from every module's header now, not just Heat. City markers are clickable from Heat, Desertification, and Hydrogeological risk (the other modules keep their own dedicated markers instead). The city detail panel adapts to which module you opened it from: Heat shows the full UHI/simulator/cost/savings view; Desertification and Hydrogeological risk show just live weather plus their one relevant live check — the rest of the Heat-focused content is dropped as not relevant there.
+
+### Volcano thermal-signal path (last 5 days)
+
+Inspired by the manual reconstructions analysts make by hand-tracing a lava flow's front across several days of Sentinel-2 SWIR imagery (labeled with dates and elevations) — that level of detail needs human interpretation of the imagery and isn't something an API can produce. What's automatable with data this app already has: selecting a volcano queries NASA FIRMS/VIIRS for the last 5 days (the max `VIIRS_SNPP_NRT` allows per request — confirmed live, the API rejects anything past 5 with "Invalid day range") within a small box around it, and shows every thermal detection grouped by day (count + max FRP) plus the same points on the map, colored pale-yellow (oldest) to red (most recent) — a genuine, live, coarse proxy (~375m VIIRS pixels) for where the heat has been moving, not a traced flow front. New backend route `/api/volcano-thermal-history` (`server/index.ts`), reusing the same NASA FIRMS proxy pattern as the national wildfire-hotspot feed, cached 10 minutes per point/day-range.
 
 ### Live Canadair tracking
 
@@ -178,12 +182,14 @@ npm run preview      # preview the production frontend build locally
 src/
 ├── components/
 │   ├── Map/        MapContainer, {City,WaterBody,Volcano,Fire,Desertification,HydroRisk,Earthquake}Markers,
-│   │                CanadairMarkers, WildfireHotspotMarkers, DotMarker (shared marker),
+│   │                CanadairMarkers, WildfireHotspotMarkers, VolcanoThermalPathMarkers,
+│   │                DotMarker (shared marker),
 │   │                SatelliteOverlay, LayerControls, MapCenterTracker, FlyTo
 │   ├── Detail/      CityDetail, AddressDetail, WaterBodyDetail, VolcanoDetail, FireDetail,
 │   │                HotspotDetail, DesertificationDetail, HydroRiskDetail, EarthquakeDetail,
 │   │                {Fire,Earthquake,HydroRisk}SafetyInfo, EmsActivationNote, AddressAlerts,
 │   │                HydrogeologicalRisk, DesertificationRisk (live per-point checks, see above),
+│   │                VolcanoThermalPath (day-by-day thermal history, see above),
 │   │                WeatherLive, Simulator, CostEstimator, PersonalSavings, HomeActions,
 │   │                HistoricalComparison, SolarPanelNote, DissipationChart
 │   ├── Info/        InfoPanel, PrivacyPolicy, UHIExplainer, AlbedoExplainer
@@ -195,13 +201,13 @@ src/
 │                    useCanadairTrack, useWildfireHotspots, useItalyEarthquakes,
 │                    useVolcanoWebcams, useWaterLevel, useMarineTrend, useSeasonalTrend,
 │                    useHistoricalComparison, useEmsActivations, useMarineConditions,
-│                    useHydrogeologicalRisk, useDesertificationRisk
+│                    useHydrogeologicalRisk, useDesertificationRisk, useVolcanoThermalHistory
 └── utils/           uhi-model, simulator, costs, satellite-layers, dissipation-model,
                      volcano-activity, geo
 server/index.ts       Express backend — Sentinel Hub OAuth2 token exchange, OpenSky
                        Network proxy (Canadair positions + flight tracks), NASA FIRMS
-                       proxy (wildfire hotspots), INGV webcam gallery proxy, Copernicus
-                       EMS activations proxy
+                       proxy (wildfire hotspots + per-volcano thermal history), INGV
+                       webcam gallery proxy, Copernicus EMS activations proxy
 ```
 
 The backend is a plain Node/Express process, meant to sit behind an Nginx reverse

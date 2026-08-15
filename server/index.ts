@@ -224,6 +224,40 @@ const ITALY_BBOX = "6,35,19,47";
 const FIRMS_CACHE_MS = 10 * 60_000; // i satelliti VIIRS ripassano poche volte al giorno
 let firmsCache: { hotspots: WildfireHotspot[]; updatedAt: number } | null = null;
 
+function parseFirmsCsv(csv: string): WildfireHotspot[] {
+  const lines = csv.trim().split("\n");
+  const header = lines[0]?.split(",") ?? [];
+  const col = (name: string) => header.indexOf(name);
+  const idx = {
+    lat: col("latitude"),
+    lon: col("longitude"),
+    confidence: col("confidence"),
+    acqDate: col("acq_date"),
+    acqTime: col("acq_time"),
+    frp: col("frp"),
+    daynight: col("daynight"),
+  };
+
+  return idx.lat < 0
+    ? [] // header inatteso (es. "Invalid MAP_KEY" come unica riga) — lista vuota, non un crash
+    : lines
+        .slice(1)
+        .filter(Boolean)
+        .map((line) => {
+          const cols = line.split(",");
+          return {
+            lat: Number(cols[idx.lat]),
+            lon: Number(cols[idx.lon]),
+            confidence: cols[idx.confidence] ?? "",
+            acqDate: cols[idx.acqDate] ?? "",
+            acqTime: cols[idx.acqTime] ?? "",
+            frp: Number(cols[idx.frp]),
+            daynight: cols[idx.daynight] ?? "",
+          };
+        })
+        .filter((h) => Number.isFinite(h.lat) && Number.isFinite(h.lon));
+}
+
 app.get("/api/wildfire-hotspots", async (_req, res) => {
   const mapKey = process.env.NASA_FIRMS_MAP_KEY;
   if (!mapKey) {
@@ -244,43 +278,57 @@ app.get("/api/wildfire-hotspots", async (_req, res) => {
     return;
   }
 
-  const csv = (await response.text()).trim();
-  const lines = csv.split("\n");
-  const header = lines[0]?.split(",") ?? [];
-  const col = (name: string) => header.indexOf(name);
-  const idx = {
-    lat: col("latitude"),
-    lon: col("longitude"),
-    confidence: col("confidence"),
-    acqDate: col("acq_date"),
-    acqTime: col("acq_time"),
-    frp: col("frp"),
-    daynight: col("daynight"),
-  };
-
-  const hotspots: WildfireHotspot[] =
-    idx.lat < 0
-      ? [] // header inatteso (es. "Invalid MAP_KEY" come unica riga) — lista vuota, non un crash
-      : lines
-          .slice(1)
-          .filter(Boolean)
-          .map((line) => {
-            const cols = line.split(",");
-            return {
-              lat: Number(cols[idx.lat]),
-              lon: Number(cols[idx.lon]),
-              confidence: cols[idx.confidence] ?? "",
-              acqDate: cols[idx.acqDate] ?? "",
-              acqTime: cols[idx.acqTime] ?? "",
-              frp: Number(cols[idx.frp]),
-              daynight: cols[idx.daynight] ?? "",
-            };
-          })
-          .filter((h) => Number.isFinite(h.lat) && Number.isFinite(h.lon));
-
-  firmsCache = { hotspots, updatedAt: Date.now() };
+  firmsCache = { hotspots: parseFirmsCsv(await response.text()), updatedAt: Date.now() };
   res.set("Cache-Control", "public, max-age=600");
   res.json(firmsCache);
+});
+
+// Storico termico VIIRS su una piccola area intorno a un punto (pensato per i
+// vulcani: ricostruisce dove si è spostato il segnale termico giorno per
+// giorno, un proxy grezzo dell'avanzamento di una colata — non un fronte
+// lava tracciato a mano su immagini Sentinel-2 come fanno gli analisti.
+// VIIRS_SNPP_NRT accetta un range massimo di 5 giorni (verificato dal vivo:
+// l'API rifiuta "10" con "Invalid day range. Expects [1..5]").
+const VOLCANO_THERMAL_CACHE_MS = 10 * 60_000;
+const volcanoThermalCache = new Map<string, { hotspots: WildfireHotspot[]; updatedAt: number }>();
+
+app.get("/api/volcano-thermal-history", async (req, res) => {
+  const mapKey = process.env.NASA_FIRMS_MAP_KEY;
+  if (!mapKey) {
+    res.status(503).json({ error: "NASA FIRMS non configurato su questo deployment" });
+    return;
+  }
+
+  const lat = Number(req.query.lat);
+  const lng = Number(req.query.lng);
+  const days = Math.min(5, Math.max(1, Number(req.query.days) || 5));
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+    res.status(400).json({ error: "lat/lng mancanti o non validi" });
+    return;
+  }
+
+  const cacheKey = `${lat.toFixed(2)},${lng.toFixed(2)},${days}`;
+  const cached = volcanoThermalCache.get(cacheKey);
+  if (cached && Date.now() - cached.updatedAt < VOLCANO_THERMAL_CACHE_MS) {
+    res.json(cached);
+    return;
+  }
+
+  // ±0.3° copre comodamente l'intero edificio vulcanico e le colate sui fianchi.
+  const d = 0.3;
+  const bbox = `${lng - d},${lat - d},${lng + d},${lat + d}`;
+  const response = await fetch(
+    `https://firms.modaps.eosdis.nasa.gov/api/area/csv/${mapKey}/VIIRS_SNPP_NRT/${bbox}/${days}`,
+  );
+  if (!response.ok) {
+    res.status(502).json({ error: "NASA FIRMS non ha risposto" });
+    return;
+  }
+
+  const result = { hotspots: parseFirmsCsv(await response.text()), updatedAt: Date.now() };
+  volcanoThermalCache.set(cacheKey, result);
+  res.set("Cache-Control", "public, max-age=600");
+  res.json(result);
 });
 
 interface WebcamShot {

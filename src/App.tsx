@@ -6,6 +6,7 @@ import CityMarkers from "./components/Map/CityMarkers";
 import WaterBodyMarkers from "./components/Map/WaterBodyMarkers";
 import MediterraneanMarkers from "./components/Map/MediterraneanMarkers";
 import VolcanoMarkers from "./components/Map/VolcanoMarkers";
+import VolcanoThermalPathMarkers from "./components/Map/VolcanoThermalPathMarkers";
 import FireMarkers from "./components/Map/FireMarkers";
 import CanadairMarkers from "./components/Map/CanadairMarkers";
 import WildfireHotspotMarkers from "./components/Map/WildfireHotspotMarkers";
@@ -51,6 +52,7 @@ import type { AddressResult } from "./utils/geocode";
 import { useCanadairPositions } from "./hooks/useCanadairPositions";
 import { useWildfireHotspots, type WildfireHotspot } from "./hooks/useWildfireHotspots";
 import { useItalyEarthquakes, type EarthquakeEvent } from "./hooks/useItalyEarthquakes";
+import { useVolcanoThermalHistory } from "./hooks/useVolcanoThermalHistory";
 import "./App.css";
 
 type Module = "calore" | "acqua" | "vulcani" | "incendi" | "desertificazione" | "idrogeologico" | "terremoti";
@@ -128,6 +130,13 @@ function App() {
   const { events: earthquakes, loading: earthquakesLoading } = useItalyEarthquakes(
     module === "terremoti" || Boolean(selectedAddress),
   );
+  // Solo quando un vulcano è selezionato — non un polling nazionale come sopra,
+  // qui interessa lo storico intorno a un punto preciso.
+  const {
+    hotspots: volcanoThermalHistory,
+    loading: volcanoThermalHistoryLoading,
+    error: volcanoThermalHistoryError,
+  } = useVolcanoThermalHistory(selectedVolcano?.lat ?? null, selectedVolcano?.lng ?? null);
   // Il satellite VIIRS rileva qualsiasi fonte di calore intenso, quindi lava e
   // crateri attivi finiscono negli stessi dati dei roghi — li separiamo per
   // distanza dal vulcano più vicino: entro il raggio è "vulcano attivo", oltre
@@ -265,6 +274,9 @@ function App() {
     <VolcanoDetail
       volcano={selectedVolcano}
       frp={volcanoActivity.get(selectedVolcano.name) ?? null}
+      thermalHistory={volcanoThermalHistory}
+      thermalHistoryLoading={volcanoThermalHistoryLoading}
+      thermalHistoryError={volcanoThermalHistoryError}
       onClose={() => setSelectedVolcano(null)}
     />
   ) : selectedFire ? (
@@ -346,6 +358,7 @@ function App() {
             {module === "vulcani" && (
               <VolcanoMarkers volcanoes={volcanoes} activity={volcanoActivity} onSelect={selectVolcano} />
             )}
+            {selectedVolcano && <VolcanoThermalPathMarkers hotspots={volcanoThermalHistory} />}
             {module === "incendi" && (
               <>
                 <WildfireHotspotMarkers hotspots={nonVolcanicHotspots} onSelect={selectHotspot} />

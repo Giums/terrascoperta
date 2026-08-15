@@ -163,6 +163,15 @@ export const mediterraneanZones: MediterraneanZone[] = [
     sourceUrl: "https://www.iucn.org/our-union/commissions/group/iucn-ssc-mediterranean-marine-fish-red-list-authority",
   },
   {
+    name: "Ionio siciliano",
+    country: "Italia",
+    lat: 37.55,
+    lng: 15.45,
+    fauna: CENTRAL_MED_GATEWAY,
+    source: "GFCM — General Fisheries Commission for the Mediterranean (FAO)",
+    sourceUrl: "https://www.fao.org/gfcm/en/",
+  },
+  {
     name: "Mar di Alboran",
     country: "Spagna/Marocco",
     lat: 35.9,

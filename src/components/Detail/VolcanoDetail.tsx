@@ -1,15 +1,20 @@
 import type { Volcano } from "../../data/volcanoes";
+import type { WildfireHotspot } from "../../hooks/useWildfireHotspots";
 import { useSeismicity } from "../../hooks/useSeismicity";
 import { useVolcanoWebcams } from "../../hooks/useVolcanoWebcams";
 import { staticSnapshotUrl } from "../../utils/satellite-layers";
 import { activityLabel } from "../../utils/volcano-activity";
 import EmsActivationNote from "./EmsActivationNote";
+import VolcanoThermalPath from "./VolcanoThermalPath";
 import "../Info/InfoPanel.css";
 
 interface VolcanoDetailProps {
   volcano: Volcano;
   /** FRP massima (MW) rilevata nel raggio del vulcano, null = nessuna attività rilevata ora. */
   frp: number | null;
+  thermalHistory: WildfireHotspot[];
+  thermalHistoryLoading: boolean;
+  thermalHistoryError: string | null;
   onClose: () => void;
 }
 
@@ -28,7 +33,14 @@ function todayMinus(days: number): string {
 // l'edificio vulcanico e i fianchi senza inquadrare troppo territorio intorno.
 const SNAPSHOT_MARGIN_DEG = 0.15;
 
-export default function VolcanoDetail({ volcano, frp, onClose }: VolcanoDetailProps) {
+export default function VolcanoDetail({
+  volcano,
+  frp,
+  thermalHistory,
+  thermalHistoryLoading,
+  thermalHistoryError,
+  onClose,
+}: VolcanoDetailProps) {
   const { events, loading, error } = useSeismicity(volcano.lat, volcano.lng);
   const { shots: webcamShots } = useVolcanoWebcams(volcano.name);
   const hasActivity = frp != null;
@@ -229,6 +241,8 @@ export default function VolcanoDetail({ volcano, frp, onClose }: VolcanoDetailPr
           <em>Fonte: INGV, servizio FDSN Event (CC BY 4.0)</em>
         </p>
       </section>
+
+      <VolcanoThermalPath hotspots={thermalHistory} loading={thermalHistoryLoading} error={thermalHistoryError} />
 
       <section className="info-panel__section">
         <h3>Come il satellite vede il calore</h3>
