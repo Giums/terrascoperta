@@ -27,6 +27,9 @@ try {
 const app = express();
 const PORT = Number(process.env.PORT ?? 3001);
 
+// TEST DELIBERATO ROLLBACK PIPELINE — da rimuovere subito dopo la verifica.
+throw new Error("rottura di prova per testare il rollback automatico");
+
 // Usato dalla pipeline di deploy (deploy.sh sul server) per verificare che il
 // processo sia vivo e risponda prima di considerare un deploy riuscito — non
 // controlla le API esterne (Sentinel Hub, FIRMS, ecc.), solo che Express stesso
