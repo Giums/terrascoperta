@@ -2,8 +2,10 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { layerMinZoom, sentinelHubAvailable, type SatelliteLayerId } from "../../utils/satellite-layers";
 import { useSeasonalTrend, seasonCutoffMonthDay } from "../../hooks/useSeasonalTrend";
-import { useMarineTrend, MARINE_MIN_YEAR } from "../../hooks/useMarineTrend";
-import { haversineKm } from "../../utils/geo";
+import { useSstHistory, SST_HISTORY_FIRST_YEAR, SST_HISTORY_LAST_YEAR } from "../../hooks/useSstHistory";
+import { nearestSeaZone } from "../../data/sea-zones";
+import { SST_MIN_YEAR, SST_SCALE_C, SST_SCALE_STOPS } from "../../utils/marine-layers";
+import { GLACIER_EPOCHS, hasGlaciersNearby, type GlacierEpoch } from "../../utils/glacier-layers";
 import TrendSparkline from "./TrendSparkline";
 import "./LayerControls.css";
 
@@ -17,6 +19,8 @@ interface LayerControlsProps {
   onDateChange: (date: string) => void;
   compareMode: CompareMode;
   mapCenter: { lat: number; lng: number };
+  glacierEpoch: GlacierEpoch | null;
+  onGlacierEpochChange: (epoch: GlacierEpoch | null) => void;
 }
 
 // Chiave i18n (layerControls.options.*) per ciascun id — le label vere si
@@ -44,40 +48,6 @@ const LAND_POINTS = [
   { lat: 40.8518, lng: 14.2681 }, // Napoli
   { lat: 37.5079, lng: 15.083 }, // Catania
 ];
-
-// Zone di mare italiane: ognuna ha un punto al largo verificato con l'API
-// (serve stare abbastanza lontani da costa, altrimenti il modello marino
-// restituisce null perché il punto cade su una cella "terra") e un punto di
-// riferimento a terra usato solo per scegliere la zona più vicina a dove sta
-// guardando l'utente sulla mappa.
-interface SeaZone {
-  name: string;
-  refLat: number;
-  refLng: number;
-  point: { lat: number; lng: number };
-}
-
-const SEA_ZONES: SeaZone[] = [
-  { name: "Liguria", refLat: 44.41, refLng: 8.93, point: { lat: 43.8, lng: 9.2 } },
-  { name: "Tirreno (Toscana/Lazio/Campania)", refLat: 41.9, refLng: 12.9, point: { lat: 40.0, lng: 13.5 } },
-  { name: "Ionio (Puglia/Basilicata/Calabria)", refLat: 39.7, refLng: 17.0, point: { lat: 38.5, lng: 17.5 } },
-  { name: "Adriatico (Veneto/Emilia-Romagna/Marche/Abruzzo)", refLat: 43.6, refLng: 13.6, point: { lat: 43.3, lng: 14.2 } },
-  { name: "Sicilia", refLat: 37.8, refLng: 13.9, point: { lat: 36.7, lng: 13.8 } },
-  { name: "Sardegna", refLat: 40.1, refLng: 9.0, point: { lat: 40.0, lng: 8.0 } },
-];
-
-function nearestSeaZone(lat: number, lng: number): SeaZone {
-  let best = SEA_ZONES[0];
-  let bestDist = haversineKm(lat, lng, best.refLat, best.refLng);
-  for (const zone of SEA_ZONES.slice(1)) {
-    const dist = haversineKm(lat, lng, zone.refLat, zone.refLng);
-    if (dist < bestDist) {
-      best = zone;
-      bestDist = dist;
-    }
-  }
-  return best;
-}
 
 function todayMinus(days: number): string {
   const d = new Date();
@@ -186,27 +156,54 @@ function YearCompare({ year, onYearChange }: YearCompareProps) {
   );
 }
 
-interface SeaCompareProps extends YearCompareProps {
-  mapCenter: { lat: number; lng: number };
+/**
+ * Barra della scala colore del layer SST. Senza questa il layer è solo "mare
+ * colorato": i colori provengono dalla colormap ufficiale del dataset, quindi
+ * la scala va mostrata con gli stessi estremi, non reinventata.
+ */
+function SstLegend() {
+  return (
+    <div className="layer-controls__legend">
+      <div
+        className="layer-controls__legend-bar"
+        style={{ background: `linear-gradient(to right, ${SST_SCALE_STOPS.join(", ")})` }}
+      />
+      <div className="layer-controls__legend-scale">
+        <span>{SST_SCALE_C.min}°C</span>
+        <span>temperatura superficie mare</span>
+        <span>{SST_SCALE_C.max}°C</span>
+      </div>
+    </div>
+  );
 }
 
-function SeaCompare({ year, onYearChange, mapCenter }: SeaCompareProps) {
-  const { rawValue, displayYear, onSlide } = useDebouncedYear(Math.max(year, MARINE_MIN_YEAR), onYearChange);
+interface SeaCompareProps extends YearCompareProps {
+  mapCenter: { lat: number; lng: number };
+  /** Inizio dello slider: 1982 col layer SST (la mappa arriva fin lì), 2023 con gli altri. */
+  minYear: number;
+}
+
+function SeaCompare({ year, onYearChange, mapCenter, minYear }: SeaCompareProps) {
+  const { rawValue, displayYear, onSlide } = useDebouncedYear(Math.max(year, minYear), onYearChange);
   const zone = useMemo(() => nearestSeaZone(mapCenter.lat, mapCenter.lng), [mapCenter.lat, mapCenter.lng]);
-  const { data, loading } = useMarineTrend([zone.point], MARINE_MIN_YEAR, CURRENT_YEAR);
+  // Serie precalcolata, nessuna richiesta: il grafico è pieno da subito.
+  const data = useSstHistory(zone.id);
+  // Serve solo per legenda e testo: lo slider ora parte dal 1982 comunque.
+  const sstActive = minYear === SST_MIN_YEAR;
+  const loading = false;
   const current = data.find((d) => d.year === displayYear)?.avgTemp ?? null;
-  const baseline = data.find((d) => d.year === MARINE_MIN_YEAR)?.avgTemp ?? null;
+  const baseline = data.find((d) => d.year === SST_HISTORY_FIRST_YEAR)?.avgTemp ?? null;
   const delta = current != null && baseline != null ? current - baseline : null;
 
   return (
     <>
       <label className="layer-controls__label" htmlFor="layer-year">
-        Estate {displayYear} — mare {zone.name} (1 giu → {seasonCutoffMonthDay()})
+        Stagione calda {displayYear} — mare {zone.name} (mag → set)
       </label>
       <input
         id="layer-year"
         type="range"
-        min={MARINE_MIN_YEAR}
+        min={minYear}
         max={CURRENT_YEAR}
         step={SLIDER_STEP}
         value={rawValue}
@@ -218,14 +215,16 @@ function SeaCompare({ year, onYearChange, mapCenter }: SeaCompareProps) {
         ) : current != null ? (
           <>
             <strong>{current.toFixed(1)}°C</strong>
-            {delta != null && displayYear !== MARINE_MIN_YEAR && (
+            {delta != null && displayYear !== SST_HISTORY_FIRST_YEAR && (
               <span className={delta >= 0 ? "layer-controls__delta--up" : "layer-controls__delta--down"}>
                 {" "}
                 ({delta >= 0 ? "+" : ""}
-                {delta.toFixed(1)}°C vs {MARINE_MIN_YEAR})
+                {delta.toFixed(1)}°C vs {SST_HISTORY_FIRST_YEAR})
               </span>
             )}
           </>
+        ) : displayYear > SST_HISTORY_LAST_YEAR ? (
+          `Stagione ${displayYear} non ancora completa`
         ) : (
           "Dato non disponibile"
         )}
@@ -233,15 +232,76 @@ function SeaCompare({ year, onYearChange, mapCenter }: SeaCompareProps) {
       <TrendSparkline
         data={data.map((d) => ({ x: d.year, y: d.avgTemp }))}
         highlightX={displayYear}
-        ariaLabel={`Andamento della temperatura media stagionale del mare ${zone.name} dal ${MARINE_MIN_YEAR} al ${CURRENT_YEAR}`}
+        ariaLabel={`Andamento della temperatura media stagionale del mare ${zone.name} dal ${SST_HISTORY_FIRST_YEAR} al ${SST_HISTORY_LAST_YEAR}`}
       />
+      {sstActive && <SstLegend />}
       <p className="layer-controls__hint">
         Zona scelta in base a dove stai guardando sulla mappa — spostati per vedere un'altra costa.
-        L'archivio storico del mare parte da fine {MARINE_MIN_YEAR - 1} (verificato) — solo poche
-        estati, non un trend decennale come per l'aria. Il layer NDWI sulla mappa non cambia aspetto
-        tra un anno e l'altro: indica "c'è acqua", non la sua temperatura — il mare è acqua in ogni
-        anno. Il numero qui sopra è l'unico indicatore del riscaldamento.
+        Numero e grafico sono medie da maggio a settembre, calcolate su{" "}
+        {SST_HISTORY_FIRST_YEAR}–{SST_HISTORY_LAST_YEAR} dai dati Copernicus Marine. La mappa mostra
+        il 20 settembre, il giorno che meglio rappresenta quella media.
+        {sstActive
+          ? " La mappa colorata segue lo stesso anno: trascina lo slider e guarda il bacino cambiare."
+          : " Scegli il layer temperatura del mare per vedere lo stesso dato sulla mappa."}
       </p>
+    </>
+  );
+}
+
+/**
+ * Contorni dei ghiacciai, con la loro epoca. Separato dal menu dei layer
+ * satellitari perché non è un'alternativa a quelli: serve *insieme* a
+ * un'immagine recente, ed è lì che si vede il ritiro.
+ */
+function GlacierControls({
+  epoch,
+  onChange,
+}: {
+  epoch: GlacierEpoch | null;
+  onChange: (epoch: GlacierEpoch | null) => void;
+}) {
+  return (
+    <>
+      <label className="layer-controls__label" htmlFor="glacier-select">
+        Contorni ghiacciai (GLIMS)
+      </label>
+      <select
+        id="glacier-select"
+        value={epoch ?? "none"}
+        onChange={(e) => onChange(e.target.value === "none" ? null : (e.target.value as GlacierEpoch))}
+      >
+        <option value="none">Nessuno</option>
+        {/* Il confronto per primo: è la modalità che mostra il ritiro. Le
+            singole epoche restano per chi vuole guardarne una sola. */}
+        <option value="compare">
+          Confronto {GLACIER_EPOCHS.historic.label} vs {GLACIER_EPOCHS.recent.label}
+        </option>
+        {(["historic", "recent"] as const).map((id) => (
+          <option key={id} value={id}>
+            Solo rilievi {GLACIER_EPOCHS[id].label}
+          </option>
+        ))}
+      </select>
+      {epoch === "compare" && (
+        <div className="layer-controls__legend">
+          <div className="layer-controls__legend-scale">
+            <span style={{ color: "#4ade80" }}>■ {GLACIER_EPOCHS.historic.label}</span>
+            <span style={{ color: "#ec4899" }}>■ {GLACIER_EPOCHS.recent.label}</span>
+          </div>
+        </div>
+      )}
+      {epoch && (
+        <p className="layer-controls__hint">
+          {epoch === "compare"
+            ? "Il bordo colorato che spunta da sotto è ghiaccio che c'era e non c'è più. "
+            : ""}
+          Perimetro dei ghiacciai al momento del rilievo. Attiva sotto un layer satellitare recente
+          (es. colori reali) e zooma sulle Alpi: il ghiaccio di oggi sta dentro il contorno di allora,
+          ed è quello lo scioglimento. Niente aree in km² qui: GLIMS raccoglie rilievi di gruppi
+          diversi, a volte discordi tra loro per lo stesso ghiacciaio e lo stesso anno — per i numeri
+          la fonte sono WGMS e il Catasto dei Ghiacciai Italiani.
+        </p>
+      )}
     </>
   );
 }
@@ -253,12 +313,22 @@ export default function LayerControls({
   onDateChange,
   compareMode,
   mapCenter,
+  glacierEpoch,
+  onGlacierEpochChange,
 }: LayerControlsProps) {
   const { t } = useTranslation();
   const minZoom = layerMinZoom(layer);
-  const minYear = compareMode === "sea" ? MARINE_MIN_YEAR : HEAT_MIN_YEAR;
+  const minYear =
+    compareMode === "sea" || layer === "sst-med" ? SST_MIN_YEAR : HEAT_MIN_YEAR;
   const year = Math.min(Math.max(Number(date.slice(0, 4)) || CURRENT_YEAR, minYear), CURRENT_YEAR);
   const [collapsed, setCollapsed] = useState(false);
+  const nearGlaciers = hasGlaciersNearby(mapCenter.lat, mapCenter.lng);
+
+  // Allontanandosi dalle zone glaciali il comando sparisce: se restasse acceso
+  // resterebbe un layer invisibile e non più spegnibile.
+  useEffect(() => {
+    if (!nearGlaciers && glacierEpoch) onGlacierEpochChange(null);
+  }, [nearGlaciers, glacierEpoch, onGlacierEpochChange]);
   const sentinelOptions = SENTINEL_OPTION_IDS.map((opt) => ({
     id: opt.id,
     label: t(`layerControls.options.${opt.key}`),
@@ -291,6 +361,9 @@ export default function LayerControls({
               {opt.label}
             </option>
           ))}
+        {/* Fuori dal gate Sentinel Hub: il WMTS Copernicus Marine è pubblico,
+            quindi questo layer c'è anche in un deployment senza chiavi. */}
+        <option value="sst-med">{t("layerControls.options.sstMed")}</option>
       </select>
       {!collapsed && (
         <>
@@ -298,7 +371,19 @@ export default function LayerControls({
             (compareMode === "heat" ? (
               <YearCompare year={year} onYearChange={(y) => onDateChange(`${y}-07-15`)} />
             ) : compareMode === "sea" ? (
-              <SeaCompare year={year} onYearChange={(y) => onDateChange(`${y}-07-15`)} mapCenter={mapCenter} />
+              <SeaCompare
+                year={year}
+                // 20 settembre e non metà luglio: la mappa mostra un giorno
+                // solo, il numero accanto è la media di maggio-settembre, e
+                // devono raccontare la stessa cosa. Misurando lo scarto di
+                // ogni giorno campionato dalla media della sua stagione, il
+                // 20 settembre è il più vicino (0,8 °C contro i 2-4 °C di
+                // metà luglio): la curva sale fino ad agosto e poi scende,
+                // quindi incrocia la propria media in discesa proprio lì.
+                onYearChange={(y) => onDateChange(`${y}-09-20`)}
+                mapCenter={mapCenter}
+                minYear={minYear}
+              />
             ) : (
               <>
                 <label className="layer-controls__label" htmlFor="layer-date">
@@ -308,11 +393,16 @@ export default function LayerControls({
                   id="layer-date"
                   type="date"
                   value={date}
-                  max={todayMinus(2)}
+                  // Il prodotto riprocessato CMEMS è indietro di circa un mese
+                  // rispetto a oggi, e in compenso arriva fino al 1982.
+                  min={layer === "sst-med" ? `${SST_MIN_YEAR}-01-01` : undefined}
+                  max={layer === "sst-med" ? todayMinus(40) : todayMinus(2)}
                   onChange={(e) => onDateChange(e.target.value)}
                 />
+                {layer === "sst-med" && <SstLegend />}
               </>
             ))}
+          {nearGlaciers && <GlacierControls epoch={glacierEpoch} onChange={onGlacierEpochChange} />}
           {minZoom != null && <p className="layer-controls__hint">{t("layerControls.zoomHint")}</p>}
           {layer === "landsat-thermal" && (
             <p className="layer-controls__hint">{t("layerControls.landsatHint")}</p>

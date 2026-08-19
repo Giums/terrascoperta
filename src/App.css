@@ -28,7 +28,12 @@
   flex-wrap: wrap;
 }
 
+/* Usata anche su un <a> (link al sorgente): senza queste due righe un anchor
+   non si allinea agli altri pulsanti e resta sottolineato. */
 .app-info-button {
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
   padding: 0.55rem 1.1rem;
   border-radius: 999px;
   border: 1px solid var(--glass-border);

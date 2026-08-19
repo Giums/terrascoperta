@@ -9,7 +9,9 @@ export type SatelliteLayerId =
   | "landsat-thermal"
   | "s5p-so2"
   | "s5p-aer-ai"
-  | "s1-backscatter";
+  | "s1-backscatter"
+  // Non è Sentinel Hub: layer WMTS di Copernicus Marine, vedi marine-layers.ts.
+  | "sst-med";
 
 const SENTINEL_INSTANCE_S2 = import.meta.env.VITE_SENTINEL_INSTANCE_ID_S2 as string | undefined;
 const SENTINEL_INSTANCE_S3 = import.meta.env.VITE_SENTINEL_INSTANCE_ID_S3 as string | undefined;
@@ -97,7 +99,8 @@ export const SENTINEL_LAYERS: Record<
 
 /** Zoom minimo richiesto perché il layer selezionato mostri dati (undefined = nessun limite). */
 export function layerMinZoom(layer: SatelliteLayerId): number | undefined {
-  return layer === "none" ? undefined : SENTINEL_LAYERS[layer].minZoom;
+  if (layer === "none" || layer === "sst-med") return undefined;
+  return SENTINEL_LAYERS[layer].minZoom;
 }
 
 /**

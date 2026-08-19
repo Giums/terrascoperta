@@ -40,6 +40,17 @@ export default function PrivacyPolicy({ onClose }: PrivacyPolicyProps) {
           <strong>Titolare del trattamento:</strong>{" "}
           <a href="mailto:info@icarom.net">info@icarom.net</a>.
         </p>
+        {/* Il link al sorgente vive qui: l'AGPL vuole che chi usa il sito possa
+            arrivare al codice, e questo è il posto dove si va a cercare "come
+            funziona davvero" — senza occupare l'interfaccia principale. */}
+        <p>
+          <strong>Codice sorgente:</strong> tutto quello che è scritto qui è verificabile —
+          il sito è software libero sotto licenza AGPLv3 e il codice completo sta su{" "}
+          <a href="https://github.com/Giums/terrascoperta" target="_blank" rel="noreferrer">
+            github.com/Giums/terrascoperta
+          </a>
+          .
+        </p>
         <p>
           <strong>Cookie:</strong> nessuno. Il sito non imposta cookie, non usa localStorage né
           sessionStorage.
@@ -83,8 +94,8 @@ export default function PrivacyPolicy({ onClose }: PrivacyPolicyProps) {
         </p>
         <p>
           <strong>Altre API pubbliche contattate</strong> (dal tuo browser o dal nostro backend, a
-          seconda della funzione): Copernicus/Sentinel Hub, Open-Meteo, INGV, NASA FIRMS, OpenSky
-          Network, Copernicus EMS, ISPRA IdroGEO. Queste richieste riguardano coordinate
+          seconda della funzione): Copernicus/Sentinel Hub, Copernicus Marine, Open-Meteo, INGV, NASA FIRMS,
+          OpenSky Network, Copernicus EMS, ISPRA IdroGEO, GLIMS/NSIDC. Queste richieste riguardano coordinate
           geografiche di città, fiumi, vulcani o eventi pubblici — non identificano te, salvo l'IP
           inevitabilmente presente in ogni richiesta HTTP, come per qualunque sito web.
         </p>
@@ -123,6 +134,14 @@ export default function PrivacyPolicy({ onClose }: PrivacyPolicyProps) {
         <p>
           <strong>Data controller:</strong>{" "}
           <a href="mailto:info@icarom.net">info@icarom.net</a>.
+        </p>
+        <p>
+          <strong>Source code:</strong> everything stated here is verifiable — this site is free
+          software under the AGPLv3 licence and the full code lives at{" "}
+          <a href="https://github.com/Giums/terrascoperta" target="_blank" rel="noreferrer">
+            github.com/Giums/terrascoperta
+          </a>
+          .
         </p>
         <p>
           <strong>Cookies:</strong> none. The site sets no cookies, uses no localStorage or
@@ -165,8 +184,8 @@ export default function PrivacyPolicy({ onClose }: PrivacyPolicyProps) {
         </p>
         <p>
           <strong>Other public APIs contacted</strong> (from your browser or our backend,
-          depending on the feature): Copernicus/Sentinel Hub, Open-Meteo, INGV, NASA FIRMS,
-          OpenSky Network, Copernicus EMS, ISPRA IdroGEO. These requests concern geographic
+          depending on the feature): Copernicus/Sentinel Hub, Copernicus Marine, Open-Meteo, INGV, NASA
+          FIRMS, OpenSky Network, Copernicus EMS, ISPRA IdroGEO, GLIMS/NSIDC. These requests concern geographic
           coordinates of cities, rivers, volcanoes, or public events — they don't identify you,
           aside from the IP address inherent to any HTTP request, as with any website.
         </p>

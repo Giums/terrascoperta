@@ -16,6 +16,8 @@ import HydroRiskMarkers from "./components/Map/HydroRiskMarkers";
 import AddressMarker from "./components/Map/AddressMarker";
 import FlyTo, { type FlyTarget } from "./components/Map/FlyTo";
 import SatelliteOverlay, { type SatelliteLayerId } from "./components/Map/SatelliteOverlay";
+import GlacierOverlay from "./components/Map/GlacierOverlay";
+import type { GlacierEpoch } from "./utils/glacier-layers";
 import SatelliteLoadingIndicator from "./components/Map/SatelliteLoadingIndicator";
 import MapCenterTracker from "./components/Map/MapCenterTracker";
 import LayerControls from "./components/Map/LayerControls";
@@ -164,6 +166,9 @@ function App() {
   // mostrare la zona di mare più vicina a dove sta guardando l'utente. Default
   // = centro Italia, stesso di ITALY_CENTER in MapContainer.tsx.
   const [mapCenter, setMapCenter] = useState({ lat: 42.5, lng: 12.5 });
+  // Indipendente dal layer satellitare: i contorni dei ghiacciai servono
+  // proprio sopra un'immagine recente, non al posto suo.
+  const [glacierEpoch, setGlacierEpoch] = useState<GlacierEpoch | null>(null);
 
   function clearSelection() {
     setShowInfo(false);
@@ -346,6 +351,7 @@ function App() {
         <>
           <MapView>
             <SatelliteOverlay layer={layer} date={date} />
+            <GlacierOverlay epoch={glacierEpoch} />
             <SatelliteLoadingIndicator />
             <MapCenterTracker onChange={setMapCenter} />
             {(module === "calore" || module === "desertificazione" || module === "idrogeologico") && (
@@ -393,6 +399,8 @@ function App() {
             onDateChange={setDate}
             compareMode={module === "calore" ? "heat" : module === "acqua" ? "sea" : "none"}
             mapCenter={mapCenter}
+            glacierEpoch={glacierEpoch}
+            onGlacierEpochChange={setGlacierEpoch}
           />
         </>
       }

@@ -11,7 +11,8 @@
     "preview": "vite preview",
     "server": "tsx watch server/index.ts",
     "server:prod": "tsx server/index.ts",
-    "test": "vitest run"
+    "test": "vitest run",
+    "sst:refresh": "tsx scripts/generate-sst-history.ts"
   },
   "dependencies": {
     "express": "^5.2.1",

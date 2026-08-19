@@ -57,7 +57,8 @@
       "landsatThermal": "Surface temperature (Landsat, ~30-100m) — coverage not guaranteed",
       "s5pSo2": "Atmospheric SO₂ — volcanic plumes (Sentinel-5P, ~7km)",
       "s5pAer": "Aerosol index — ash/smoke aloft (Sentinel-5P, ~7km)",
-      "s1Backscatter": "SAR radar — sees through clouds (Sentinel-1, 10-20m)"
+      "s1Backscatter": "SAR radar — sees through clouds (Sentinel-1, 10-20m)",
+      "sstMed": "Sea surface temperature — Mediterranean, since 1982 (Copernicus Marine)"
     }
   },
   "safety": {

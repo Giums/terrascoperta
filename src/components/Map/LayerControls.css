@@ -69,11 +69,43 @@
   text-overflow: ellipsis;
   white-space: nowrap;
   overflow: hidden;
+  /* Il menu a tendina aperto viene disegnato dal browser fuori dal pannello:
+     senza questo, Chromium eredita il background semi-trasparente qui sopra,
+     lo appiattisce su bianco e ci scrive sopra testo chiaro. */
+  color-scheme: dark;
+}
+
+/* Colori opachi obbligatori: le option non ereditano in modo affidabile e un
+   rgba() trasparente qui viene composto contro il bianco, non contro il pannello. */
+.layer-controls select option,
+.layer-controls select optgroup {
+  background-color: #161b24;
+  color: #f1f5f9;
 }
 
 .layer-controls input[type="range"] {
   accent-color: #38bdf8;
   width: 100%;
+}
+
+.layer-controls__legend {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.layer-controls__legend-bar {
+  height: 10px;
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.layer-controls__legend-scale {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font-size: 0.72rem;
+  color: #94a3b8;
 }
 
 .layer-controls__temp {

@@ -22,6 +22,20 @@ describe("haversineKm", () => {
     const b = haversineKm(45.5, 9.2, 41.9, 12.5);
     expect(a).toBeCloseTo(b, 10);
   });
+
+  // Nessun punto italiano sta vicino all'antimeridiano, ma è l'errore classico
+  // di chi riscrive una distanza geografica: sottrarre le longitudini senza
+  // normalizzare dà 39.800 km invece di 222 per due punti quasi adiacenti.
+  it("attraversa l'antimeridiano senza esplodere", () => {
+    expect(haversineKm(0, 179, 0, -179)).toBeCloseTo(222.39, 1);
+  });
+
+  // Difende dal caso opposto: agli antipodi l'argomento dell'arcocoseno
+  // arriva al limite del dominio, e un'implementazione senza clamp restituisce
+  // NaN proprio sulla distanza massima possibile.
+  it("gestisce due punti antipodali", () => {
+    expect(haversineKm(0, 0, 0, 180)).toBeCloseTo(20015.09, 1);
+  });
 });
 
 describe("nearestCity", () => {

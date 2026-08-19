@@ -4,6 +4,7 @@ import {
   sentinelTimeRange,
   type SatelliteLayerId,
 } from "../../utils/satellite-layers";
+import { sstTileUrl, CMEMS_ATTRIBUTION } from "../../utils/marine-layers";
 
 export type { SatelliteLayerId } from "../../utils/satellite-layers";
 
@@ -43,6 +44,23 @@ const SENTINEL_ATTRIBUTION = `Contains modified Copernicus Sentinel data ${new D
  */
 export default function SatelliteOverlay({ layer, date }: SatelliteOverlayProps) {
   if (layer === "none") return null;
+
+  // Copernicus Marine, non Sentinel Hub: WMTS pubblico chiamato direttamente
+  // dal browser, nessun proxy e nessuna chiave (vedi marine-layers.ts).
+  if (layer === "sst-med") {
+    return (
+      <Source
+        key={`sst-med-${date}`}
+        id="satellite"
+        type="raster"
+        tiles={[sstTileUrl(date)]}
+        tileSize={256}
+        attribution={CMEMS_ATTRIBUTION}
+      >
+        <Layer id="satellite-layer" type="raster" source="satellite" paint={{ "raster-opacity": 0.8 }} />
+      </Source>
+    );
+  }
 
   const { instance, name, minZoom, lookbackDays } = SENTINEL_LAYERS[layer];
   if (!instance) return null;

@@ -44,3 +44,8 @@ DEPLOY_TODO.md
 *.njsproj
 *.sln
 *.sw?
+
+# ===== Strumenti interni =====
+# graphify-out/: knowledge graph generato in locale per lavorare sul progetto,
+# non fa parte del sito. Il repo è pubblico: resta fuori.
+graphify-out/

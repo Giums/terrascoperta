@@ -57,7 +57,8 @@
       "landsatThermal": "Temperatura superficie (Landsat, ~30-100m) — copertura non garantita",
       "s5pSo2": "SO₂ atmosferico — pennacchi vulcanici (Sentinel-5P, ~7km)",
       "s5pAer": "Indice aerosol — cenere/fumo in quota (Sentinel-5P, ~7km)",
-      "s1Backscatter": "Radar SAR — vede sotto le nuvole (Sentinel-1, 10-20m)"
+      "s1Backscatter": "Radar SAR — vede sotto le nuvole (Sentinel-1, 10-20m)",
+      "sstMed": "Temperatura del mare — Mediterraneo, dal 1982 (Copernicus Marine)"
     }
   },
   "safety": {
