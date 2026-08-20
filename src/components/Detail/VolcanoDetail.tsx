@@ -2,7 +2,7 @@ import type { Volcano } from "../../data/volcanoes";
 import type { WildfireHotspot } from "../../hooks/useWildfireHotspots";
 import { useSeismicity } from "../../hooks/useSeismicity";
 import { useVolcanoWebcams } from "../../hooks/useVolcanoWebcams";
-import { staticSnapshotUrl } from "../../utils/satellite-layers";
+import { defaultLayerDate, staticSnapshotUrl } from "../../utils/satellite-layers";
 import { activityLabel } from "../../utils/volcano-activity";
 import EmsActivationNote from "./EmsActivationNote";
 import VolcanoThermalPath from "./VolcanoThermalPath";
@@ -21,12 +21,6 @@ interface VolcanoDetailProps {
 function formatTime(iso: string): string {
   const d = new Date(iso);
   return Number.isNaN(d.getTime()) ? iso : d.toLocaleString("it-IT");
-}
-
-function todayMinus(days: number): string {
-  const d = new Date();
-  d.setDate(d.getDate() - days);
-  return d.toISOString().slice(0, 10);
 }
 
 // Margine intorno al vulcano per l'anteprima satellitare: ~15-17km, copre
@@ -51,7 +45,7 @@ export default function VolcanoDetail({
     minLng: volcano.lng - SNAPSHOT_MARGIN_DEG,
     maxLng: volcano.lng + SNAPSHOT_MARGIN_DEG,
   };
-  const snapshotDate = todayMinus(2);
+  const snapshotDate = defaultLayerDate();
   const trueColorUrl = staticSnapshotUrl("s2-true-color", bbox, snapshotDate);
   const swirUrl = staticSnapshotUrl("s2-swir", bbox, snapshotDate);
   // Bbox più ampio per SO2/aerosol: pixel S5P ~7x3.5km, un margine di 15-17km

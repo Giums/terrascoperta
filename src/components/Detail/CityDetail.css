@@ -434,3 +434,64 @@
     border: 1px solid rgba(255, 255, 255, 0.06);
   }
 }
+
+/* ClimateCorrelations */
+.correlations > summary {
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #e2e8f0;
+  padding: 0.35rem 0;
+  list-style: revert; /* il triangolo di apertura è l'unico segnale che c'è altro sotto */
+}
+
+.correlations > summary:focus-visible {
+  outline: 2px solid #38bdf8;
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+.correlations__metric {
+  margin: 0.9rem 0;
+  padding-bottom: 0.9rem;
+  border-bottom: 1px solid #1e293b;
+}
+
+.correlations__metric:last-of-type {
+  border-bottom: none;
+}
+
+/* Colonna, non riga: il pannello di dettaglio è largo ~330 px e su una riga
+   sola "+2.7 g/anno per decennio" veniva tagliato a metà (visto a schermo, non
+   dedotto). Nessun `nowrap` qui per lo stesso motivo. */
+.correlations__metric-head {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  margin-bottom: 0.3rem;
+}
+
+.correlations__metric-label {
+  font-size: 0.8rem;
+  color: #94a3b8;
+}
+
+.correlations__metric-head > span:last-child {
+  font-size: 0.85rem;
+}
+
+.correlations__metric-note {
+  margin: 0.3rem 0 0;
+  font-size: 0.78rem;
+  line-height: 1.5;
+  color: #cbd5e1;
+}
+
+.correlations__caveat {
+  margin: 0.5rem 0 0;
+  font-size: 0.75rem;
+  line-height: 1.5;
+  color: #94a3b8;
+  border-left: 2px solid #475569;
+  padding-left: 0.6rem;
+}

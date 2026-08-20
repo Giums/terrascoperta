@@ -49,6 +49,24 @@ The Fires module shows real-time positions of the Protezione Civile's water-bomb
 - **Live positions**: [OpenSky Network](https://opensky-network.org/) has free ADS-B data but blocks CORS for browser requests — the backend (`server/index.ts`) proxies it, filtered to just this fleet. Authenticated (OAuth2 client_credentials) when credentials are configured, for a 4000-credit/day quota instead of 400; falls back to the anonymous endpoint gracefully if not.
 - **Flight track on click**: clicking an aircraft fetches and draws its recent track (`/api/canadair-track/:icao24`, proxying OpenSky's `/tracks/all`) — rendered as DOM markers rather than a MapLibre GL line (a GL `Layer` was tried and never rendered correctly across three browsers despite matching the documented API; the dot-based fallback works reliably).
 
+### Climate trends and correlations (per city)
+
+Clicking any of the 107 cities — or searching a street address — opens a collapsed **"Tendenze e correlazioni"** section. Expanding it computes, from a single Open-Meteo archive request covering 1961 to the last complete year (ERA5 reanalysis, ~136 kB gzip, ~1.7 s, no API key), four annual indices for that exact point: days with a maximum at or above 35 °C, tropical nights (minimum at or above 20 °C), heaviest single-day rainfall, and longest dry spell. Each row shows the slope per decade, the last 10 years against the WMO 1961-1990 baseline, and — deliberately — the **R² of the fit**: for Rome the heaviest-rainfall trend explains 1% of the variance, and the panel says so instead of presenting a meaningless line as a finding.
+
+Everything is computed on the exact coordinates, not on a nearest-city lookup: ERA5 is a continuous grid, so an address gets its own numbers, and the sea zone follows the point too (Rome pulls the Tyrrhenian, Catania pulls Sicily).
+
+A fifth row uses the precalculated sea-temperature series: the nearest sea zone's warm-season anomaly against 1982-2011 (not 1961-1990 — the Copernicus product starts in 1982, and the panel states the different baseline rather than hiding it) is converted through Clausius-Clapeyron (~+7% water vapour per °C) into how much more moisture the air above that sea can hold. Rome: +1.13 °C, so roughly +8%. Catania: +1.24 °C, roughly +9%.
+
+**What this is not.** The panel says in plain words that these are trends and temporal coincidences, not cause and effect. Attributing a single cloudburst or a single wildfire to warming requires an ensemble of counterfactual simulations (the World Weather Attribution method), which this site does not and cannot do. The Clausius-Clapeyron figure is labelled as *capacity* — how much energy and moisture are available to a storm — not as rainfall, and it is noted that observed hourly intensification of Mediterranean cloudbursts often exceeds it, making the number a lower bound.
+
+The fetch only fires when the section is expanded, and results are cached per point for the life of the page. Years with less than 80% of days are dropped rather than reported as zero — the same rule as the sea-temperature script, because a zero in a chart reads as "it never happened", the opposite of "we do not know".
+
+Pure logic lives in `src/utils/correlations.ts` with 19 Vitest tests.
+
+### Imagery freshness
+
+The date picker's upper bound is **today**, and the default is **yesterday**. Checked live against the CDSE catalogue: acquisition-to-publication latency is hours, not days — around 50 min for Sentinel-5P NRTI, ~2.5 h for Sentinel-3 `SL_2_LST`, ~4-8 h for Sentinel-2 L2A. Stopping at two days ago (as this app previously did) discarded already-published data, and on the Sentinel-5P layers — whose `lookbackDays` is deliberately 2, so a moving plume is not averaged away — it made yesterday's plume unreachable by construction. What genuinely lags is the *revisit*, not the latency: if a satellite has not passed over yet, the mosaic over `lookbackDays` still picks the most recent usable pass in the window.
+
 ## Tech stack
 
 - **Frontend:** React 19 + TypeScript + Vite
@@ -195,7 +213,8 @@ src/
 │   │                HydrogeologicalRisk, DesertificationRisk (live per-point checks, see above),
 │   │                VolcanoThermalPath (day-by-day thermal history, see above),
 │   │                WeatherLive, Simulator, CostEstimator, PersonalSavings, HomeActions,
-│   │                HistoricalComparison, SolarPanelNote, DissipationChart
+│   │                HistoricalComparison, ClimateCorrelations (see above), SolarPanelNote,
+│   │                DissipationChart
 │   ├── Info/        InfoPanel, PrivacyPolicy, UHIExplainer, AlbedoExplainer
 │   ├── Search/      UnifiedSearch
 │   └── Layout/      Shell
@@ -205,9 +224,10 @@ src/
 │                    useCanadairTrack, useWildfireHotspots, useItalyEarthquakes,
 │                    useVolcanoWebcams, useWaterLevel, useMarineTrend, useSeasonalTrend,
 │                    useHistoricalComparison, useEmsActivations, useMarineConditions,
-│                    useHydrogeologicalRisk, useDesertificationRisk, useVolcanoThermalHistory
-└── utils/           uhi-model, simulator, costs, satellite-layers, dissipation-model,
-                     volcano-activity, geo
+│                    useHydrogeologicalRisk, useDesertificationRisk, useVolcanoThermalHistory,
+│                    useSstHistory, useClimateIndices
+└── utils/           uhi-model, simulator, costs, satellite-layers, marine-layers,
+                     glacier-layers, dissipation-model, correlations, volcano-activity, geo
 server/index.ts       Express backend — Sentinel Hub OAuth2 token exchange, OpenSky
                        Network proxy (Canadair positions + flight tracks), NASA FIRMS
                        proxy (wildfire hotspots + per-volcano thermal history), INGV
@@ -228,6 +248,9 @@ The UHI intensity shown per city is a **statistical estimate**, not a satellite 
 - Stewart, I.D. & Oke, T.R. (2012). *Local Climate Zones for Urban Temperature Studies.* Bulletin of the American Meteorological Society, 93(12), 1879-1900.
 - Santamouris, M. (2014). *Cooling the cities — A review of reflective and green roof mitigation technologies.* Solar Energy, 103, 682-703.
 - McFeeters, S.K. (1996). *The use of the Normalized Difference Water Index (NDWI) in the delineation of open water features.* International Journal of Remote Sensing, 17(7), 1425-1432.
+- Trenberth, K.E. et al. (2003). *The changing character of precipitation.* Bulletin of the American Meteorological Society, 84(9), 1205-1217. — the Clausius-Clapeyron framing used in the correlations panel.
+- Lenderink, G. & van Meijgaard, E. (2008). *Increase in hourly precipitation extremes beyond expectations from temperature changes.* Nature Geoscience, 1, 511-514. — why ~+7%/°C is treated there as a lower bound, not a prediction.
+- Zhang, X. et al. (2011). *Indices for monitoring changes in extremes based on daily temperature and precipitation data.* WIREs Climate Change, 2(6), 851-870. — the ETCCDI index definitions behind the hot-day, tropical-night, and dry-spell counts.
 
 For precise figures, consult ISPRA, ENEA, and regional public-works price lists.
 

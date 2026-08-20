@@ -1,6 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { layerMinZoom, sentinelHubAvailable, type SatelliteLayerId } from "../../utils/satellite-layers";
+import {
+  layerMinZoom,
+  latestLayerDate,
+  sentinelHubAvailable,
+  todayMinus,
+  type SatelliteLayerId,
+} from "../../utils/satellite-layers";
 import { useSeasonalTrend, seasonCutoffMonthDay } from "../../hooks/useSeasonalTrend";
 import { useSstHistory, SST_HISTORY_FIRST_YEAR, SST_HISTORY_LAST_YEAR } from "../../hooks/useSstHistory";
 import { nearestSeaZone } from "../../data/sea-zones";
@@ -48,12 +54,6 @@ const LAND_POINTS = [
   { lat: 40.8518, lng: 14.2681 }, // Napoli
   { lat: 37.5079, lng: 15.083 }, // Catania
 ];
-
-function todayMinus(days: number): string {
-  const d = new Date();
-  d.setDate(d.getDate() - days);
-  return d.toISOString().slice(0, 10);
-}
 
 // Sentinel-2 (10m) e Sentinel-3 (LST) coprono davvero dal 2016 in poi — prima
 // i satelliti non c'erano ancora o non avevano copertura globale operativa.
@@ -396,7 +396,7 @@ export default function LayerControls({
                   // Il prodotto riprocessato CMEMS è indietro di circa un mese
                   // rispetto a oggi, e in compenso arriva fino al 1982.
                   min={layer === "sst-med" ? `${SST_MIN_YEAR}-01-01` : undefined}
-                  max={layer === "sst-med" ? todayMinus(40) : todayMinus(2)}
+                  max={layer === "sst-med" ? todayMinus(40) : latestLayerDate()}
                   onChange={(e) => onDateChange(e.target.value)}
                 />
                 {layer === "sst-med" && <SstLegend />}

@@ -8,6 +8,7 @@ import { estimateUHI } from "../../utils/uhi-model";
 import { simulateMitigation } from "../../utils/simulator";
 import WeatherLive from "./WeatherLive";
 import HistoricalComparison from "./HistoricalComparison";
+import ClimateCorrelations from "./ClimateCorrelations";
 import Simulator from "./Simulator";
 import DissipationChart from "./DissipationChart";
 import PersonalSavings from "./PersonalSavings";
@@ -85,6 +86,7 @@ export default function AddressDetail({
       <section className="city-detail__section">
         <h3>Estate di ieri vs estate di oggi, qui</h3>
         <HistoricalComparison lat={address.lat} lng={address.lng} />
+        <ClimateCorrelations lat={address.lat} lng={address.lng} />
       </section>
 
       <section className="city-detail__section">

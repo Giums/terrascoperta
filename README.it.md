@@ -49,6 +49,24 @@ Il modulo Incendi mostra le posizioni in tempo reale della flotta antincendio de
 - **Posizioni live**: [OpenSky Network](https://opensky-network.org/) ha dati ADS-B gratuiti ma blocca CORS per le richieste da browser — il backend (`server/index.ts`) fa da proxy, filtrato solo su questa flotta. Autenticato (OAuth2 client_credentials) quando le credenziali sono configurate, per una quota di 4000 crediti/giorno invece di 400; torna all'endpoint anonimo se non lo sono.
 - **Traccia di volo al click**: cliccando un velivolo si recupera e disegna la sua traccia recente (`/api/canadair-track/:icao24`, proxy verso `/tracks/all` di OpenSky) — renderizzata come marker DOM invece che una linea MapLibre GL (un `Layer` GL è stato provato e non ha mai renderizzato correttamente su tre browser diversi nonostante l'API documentata combaciasse; il fallback a puntini funziona in modo affidabile).
 
+### Tendenze e correlazioni climatiche (per città)
+
+Cliccando una qualunque delle 107 città — o cercando un indirizzo — si apre una sezione **"Tendenze e correlazioni"**, chiusa di default. Aprendola si calcolano, da una sola richiesta a Open-Meteo archive che copre dal 1961 all'ultimo anno completo (rianalisi ERA5, ~136 kB gzip, ~1,7 s, nessuna chiave API), quattro indici annuali per quel punto esatto: giorni con massima ≥ 35 °C, notti tropicali (minima ≥ 20 °C), pioggia massima caduta in un giorno, periodo secco più lungo. Ogni riga mostra la pendenza per decennio, gli ultimi 10 anni contro la baseline WMO 1961-1990 e — volutamente — **l'R² della retta**: su Roma la tendenza della pioggia massima spiega l'1% della variabilità, e il pannello lo scrive invece di spacciare una retta senza significato per un risultato.
+
+Tutto è calcolato sulle coordinate esatte, non sulla città più vicina: ERA5 è una griglia continua, quindi un indirizzo ha i suoi numeri, e anche la zona di mare segue il punto (Roma prende il Tirreno, Catania la Sicilia).
+
+Una quinta riga usa la serie precalcolata della temperatura del mare: l'anomalia della stagione calda della zona di mare più vicina rispetto al 1982-2011 (non 1961-1990 — il prodotto Copernicus parte dal 1982, e la baseline diversa è dichiarata a schermo, non nascosta) viene convertita con Clausius-Clapeyron (~+7% di vapore acqueo per °C) in quanta umidità in più può trattenere l'aria sopra quel mare. Roma: +1,13 °C, quindi circa +8%. Catania: +1,24 °C, circa +9%.
+
+**Cosa non è.** Il pannello dice a parole chiare che sono tendenze e coincidenze temporali, non rapporti di causa-effetto. Attribuire un singolo nubifragio o un singolo incendio al riscaldamento richiede un ensemble di simulazioni controfattuali (il metodo di World Weather Attribution), che questo sito non fa e non può fare. Il numero di Clausius-Clapeyron è etichettato come *capacità* — quanta energia e quanta umidità sono disponibili per un temporale — non come pioggia, e si precisa che l'intensificazione oraria osservata dei nubifragi mediterranei lo supera spesso, il che ne fa semmai un limite inferiore.
+
+La richiesta parte solo all'apertura della sezione, e il risultato resta in cache per punto per tutta la vita della pagina. Gli anni con meno dell'80% dei giorni vengono scartati invece che riportati a zero — stessa regola dello script della temperatura del mare, perché uno zero in un grafico si legge come "non è mai successo", l'opposto di "non lo sappiamo".
+
+La logica pura sta in `src/utils/correlations.ts`, con 19 test Vitest.
+
+### Freschezza delle immagini
+
+Il massimo selezionabile nel selettore data è **oggi**, e il default è **ieri**. Verificato dal vivo sul catalogo CDSE: la latenza acquisizione → pubblicazione è di ore, non di giorni — circa 50 min per Sentinel-5P NRTI, ~2,5 h per Sentinel-3 `SL_2_LST`, ~4-8 h per Sentinel-2 L2A. Fermarsi a due giorni fa (come faceva prima questa app) buttava via dati già pubblicati, e sui layer Sentinel-5P — che hanno `lookbackDays` a 2 apposta, per non mediare via un pennacchio in movimento — rendeva il pennacchio di ieri irraggiungibile per costruzione. Quello che resta davvero indietro è il *revisit*, non la latenza: se un satellite non è ancora ripassato, il mosaico su `lookbackDays` pesca comunque il passaggio utile più recente della finestra.
+
 ## Stack tecnico
 
 - **Frontend:** React 19 + TypeScript + Vite
@@ -195,7 +213,8 @@ src/
 │   │                HydrogeologicalRisk, DesertificationRisk (controlli live per punto, vedi sopra),
 │   │                VolcanoThermalPath (storico termico giorno per giorno, vedi sopra),
 │   │                WeatherLive, Simulator, CostEstimator, PersonalSavings, HomeActions,
-│   │                HistoricalComparison, SolarPanelNote, DissipationChart
+│   │                HistoricalComparison, ClimateCorrelations (vedi sopra), SolarPanelNote,
+│   │                DissipationChart
 │   ├── Info/        InfoPanel, PrivacyPolicy, UHIExplainer, AlbedoExplainer
 │   ├── Search/      UnifiedSearch
 │   └── Layout/      Shell
@@ -205,9 +224,10 @@ src/
 │                    useCanadairTrack, useWildfireHotspots, useItalyEarthquakes,
 │                    useVolcanoWebcams, useWaterLevel, useMarineTrend, useSeasonalTrend,
 │                    useHistoricalComparison, useEmsActivations, useMarineConditions,
-│                    useHydrogeologicalRisk, useDesertificationRisk, useVolcanoThermalHistory
-└── utils/           uhi-model, simulator, costs, satellite-layers, dissipation-model,
-                     volcano-activity, geo
+│                    useHydrogeologicalRisk, useDesertificationRisk, useVolcanoThermalHistory,
+│                    useSstHistory, useClimateIndices
+└── utils/           uhi-model, simulator, costs, satellite-layers, marine-layers,
+                     glacier-layers, dissipation-model, correlations, volcano-activity, geo
 server/index.ts       Backend Express — scambio token OAuth2 Sentinel Hub, proxy OpenSky
                        Network (posizioni Canadair + tracce di volo), proxy NASA FIRMS
                        (focolai + storico termico per vulcano), proxy galleria webcam
@@ -228,6 +248,9 @@ L'intensità UHI mostrata per ogni città è una **stima statistica**, non una m
 - Stewart, I.D. & Oke, T.R. (2012). *Local Climate Zones for Urban Temperature Studies.* Bulletin of the American Meteorological Society, 93(12), 1879-1900.
 - Santamouris, M. (2014). *Cooling the cities — A review of reflective and green roof mitigation technologies.* Solar Energy, 103, 682-703.
 - McFeeters, S.K. (1996). *The use of the Normalized Difference Water Index (NDWI) in the delineation of open water features.* International Journal of Remote Sensing, 17(7), 1425-1432.
+- Trenberth, K.E. et al. (2003). *The changing character of precipitation.* Bulletin of the American Meteorological Society, 84(9), 1205-1217. — è l'inquadramento di Clausius-Clapeyron usato nel pannello delle correlazioni.
+- Lenderink, G. & van Meijgaard, E. (2008). *Increase in hourly precipitation extremes beyond expectations from temperature changes.* Nature Geoscience, 1, 511-514. — il motivo per cui lì il ~+7%/°C è trattato come limite inferiore, non come previsione.
+- Zhang, X. et al. (2011). *Indices for monitoring changes in extremes based on daily temperature and precipitation data.* WIREs Climate Change, 2(6), 851-870. — le definizioni ETCCDI dietro i conteggi di giorni caldi, notti tropicali e periodi secchi.
 
 Per dati precisi, consultare ISPRA, ENEA, e il prezziario regionale delle opere pubbliche.
 

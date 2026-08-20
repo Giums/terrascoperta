@@ -128,6 +128,40 @@ export function staticSnapshotUrl(
   );
 }
 
+/** Data di oggi meno `days`, in `YYYY-MM-DD` (fuso locale del browser). */
+export function todayMinus(days: number): string {
+  const d = new Date();
+  d.setDate(d.getDate() - days);
+  return d.toISOString().slice(0, 10);
+}
+
+/**
+ * Estremo superiore selezionabile per i layer Sentinel: **oggi**.
+ *
+ * Verificato sul catalogo CDSE (2026-08-20): la latenza acquisizione →
+ * pubblicazione è di ore, non di giorni — ~50 min per Sentinel-5P NRTI, ~2,5 h
+ * per Sentinel-3 SL_2_LST, ~4-8 h per Sentinel-2 L2A. Fermarsi a due giorni fa
+ * (come si faceva prima) buttava via dati già pubblicati, e sui layer S5P
+ * (`lookbackDays: 2`) rendeva il pennacchio di ieri irraggiungibile per
+ * costruzione. Quello che resta indietro è il *revisit*, non la latenza: se un
+ * satellite non è ancora ripassato, il mosaico su `lookbackDays` pesca comunque
+ * il passaggio utile più recente della finestra.
+ */
+export function latestLayerDate(): string {
+  return todayMinus(0);
+}
+
+/**
+ * Data iniziale dei layer satellitari: ieri, non oggi. Alle prime ore del
+ * mattino un mosaico che finisce "oggi" può essere ancora vuoto su parte
+ * d'Italia (nessun passaggio processato dopo la mezzanotte locale), e la prima
+ * schermata del sito non deve essere grigia. Oggi resta comunque
+ * selezionabile a mano — vedi `latestLayerDate`.
+ */
+export function defaultLayerDate(): string {
+  return todayMinus(1);
+}
+
 export function sentinelTimeRange(date: string, lookbackDays: number): string {
   // Sentinel Hub compone un mosaico cloud-free sulla finestra: più giorni prima
   // della data scelta aumentano la probabilità di trovare pixel senza nuvole

@@ -48,7 +48,7 @@ import { desertificationZones } from "./data/desertification-zones";
 import type { DesertificationZone } from "./data/desertification-zones";
 import { hydroRiskCases } from "./data/hydro-risk";
 import type { HydroRiskCase } from "./data/hydro-risk";
-import { sentinelHubAvailable } from "./utils/satellite-layers";
+import { sentinelHubAvailable, defaultLayerDate } from "./utils/satellite-layers";
 import { haversineKm } from "./utils/geo";
 import type { AddressResult } from "./utils/geocode";
 import { useCanadairPositions } from "./hooks/useCanadairPositions";
@@ -98,12 +98,6 @@ const MODULES: { id: Module; icon: string; defaultLayer: SatelliteLayerId }[] = 
     defaultLayer: "none",
   },
 ];
-
-function defaultLayerDate(): string {
-  const d = new Date();
-  d.setDate(d.getDate() - 2);
-  return d.toISOString().slice(0, 10);
-}
 
 function App() {
   const { t, i18n } = useTranslation();

@@ -4,6 +4,7 @@ import { estimateUHI } from "../../utils/uhi-model";
 import { simulateMitigation } from "../../utils/simulator";
 import WeatherLive from "./WeatherLive";
 import HistoricalComparison from "./HistoricalComparison";
+import ClimateCorrelations from "./ClimateCorrelations";
 import Simulator from "./Simulator";
 import DissipationChart from "./DissipationChart";
 import CostEstimator from "./CostEstimator";
@@ -57,6 +58,7 @@ export default function CityDetail({ city, focus = "calore", onClose }: CityDeta
           <section className="city-detail__section">
             <h3>Estate di ieri vs estate di oggi</h3>
             <HistoricalComparison lat={city.lat} lng={city.lng} />
+            <ClimateCorrelations lat={city.lat} lng={city.lng} />
           </section>
 
           <HydrogeologicalRisk lat={city.lat} lng={city.lng} />
