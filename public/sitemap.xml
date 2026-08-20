@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Una sola URL, e non è una svista: il sito è una single-page application e lo
+  stato (modulo aperto, layer, anno) vive in React, non nell'indirizzo. Non
+  esistono /mare o /ghiacciai da dichiarare.
+
+  È anche il limite più serio per la condivisione: non si può mandare a qualcuno
+  "il Mediterraneo nel 1985", perché quel link non esiste. Se un domani lo stato
+  finisce nell'URL (query string o rotte), questa sitemap va ampliata di
+  conseguenza — ed è quello il momento in cui l'indicizzazione inizia davvero a
+  rendere.
+-->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://terrascoperta.it/</loc>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+  </url>
+</urlset>

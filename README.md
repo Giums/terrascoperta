@@ -244,7 +244,7 @@ In production, set the same variables as real environment variables on the serve
 
 ## Privacy
 
-A bilingual (IT/EN) Privacy notice is available from the "Privacy" button in the header (`src/components/Info/PrivacyPolicy.tsx`), based on an actual audit of the codebase: no cookies, no localStorage, no accounts or forms that persist data. Analytics is Umami, self-hosted on our own server in Milan (`stats.icarom.net`): cookieless, no localStorage, IP hashed with a daily-rotating salt, no third-party analytics provider and no traffic data leaving the EU — see the Analytics section of the notice. The address search sends the typed query directly from the browser to Nominatim/OpenStreetMap; the two live per-point checks above send the searched coordinates directly to ISPRA IdroGEO and Copernicus, same pattern (browser-to-provider, not through our backend). Contact: `info@icarom.net`. This is a good-faith technical description for a small personal project, not legal advice.
+A bilingual (IT/EN) Privacy notice is available from the "Privacy" button in the header (`src/components/Info/PrivacyPolicy.tsx`), based on an actual audit of the codebase: no cookies, no accounts or forms that persist data, and a single localStorage entry (`i18nextLng`) holding your chosen interface language — verified by inspecting the browser, not assumed from the code. Analytics is Umami, self-hosted on our own server in Milan (`stats.icarom.net`): cookieless, no localStorage, IP hashed with a daily-rotating salt, no third-party analytics provider and no traffic data leaving the EU — see the Analytics section of the notice. The address search sends the typed query directly from the browser to Nominatim/OpenStreetMap; the two live per-point checks above send the searched coordinates directly to ISPRA IdroGEO and Copernicus, same pattern (browser-to-provider, not through our backend). Contact: `info@icarom.net`. This is a good-faith technical description for a small personal project, not legal advice.
 
 ## Roadmap
 
@@ -258,6 +258,10 @@ A bilingual (IT/EN) Privacy notice is available from the "Privacy" button in the
 - An air-quality module (NO₂/CO/CH₄ via Sentinel-5P) — a full new module, not a small addition, so treated as a separate future initiative rather than bundled into existing ones.
 - Copernicus EMS activation check for other, less time-critical categories (`storm`, `industrial`, `environment`) if a module for them ever exists.
 - Hydrometric coverage beyond Lombardia — no live API found in a 9-region sweep; would need scraping regional ARPA sites individually.
+
+### SEO and social preview
+
+`public/robots.txt`, `public/sitemap.xml` and `public/og-image.jpg` (generated from the sea-temperature layer itself, 2400×1260). Before this, `robots.txt` and `sitemap.xml` *appeared* to exist because Nginx's SPA fallback served `index.html` with a 200 for any unknown path — worth knowing, because a quick check would have called them done. The sitemap lists a single URL and says why in a comment: the app keeps its state (module, layer, year) in React rather than in the address, so there is no `/mare` or `/ghiacciai` to declare — and no way to share "the Mediterranean in 1985" as a link. That's the change that would make indexing actually pay off.
 
 ## License
 

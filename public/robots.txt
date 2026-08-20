@@ -1,0 +1,11 @@
+# TerraScoperta — https://terrascoperta.it
+# Sito pubblico, tutto indicizzabile: non ci sono aree private né dati personali.
+
+User-agent: *
+Allow: /
+
+# /api/* sono endpoint JSON che servono l'app, non pagine da indicizzare:
+# finirebbero nei risultati di ricerca come testo grezzo senza alcun senso.
+Disallow: /api/
+
+Sitemap: https://terrascoperta.it/sitemap.xml

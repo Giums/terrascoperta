@@ -11,7 +11,9 @@ interface PrivacyPolicyProps {
  * dalla lingua del browser, in attesa di un i18n completo (vedi README, Roadmap).
  *
  * Contenuto basato su un audit reale del codice (non assunto): nessun cookie,
- * nessun localStorage/sessionStorage, nessun account o form che salva dati.
+ * nessun cookie, nessun account o form che salva dati. Unica eccezione in
+ * localStorage: `i18nextLng`, la lingua scelta — verificata ispezionando il
+ * browser, non dedotta dal codice (i18next la scrive già al primo caricamento).
  * L'unico punto di dato personale è la ricerca indirizzo, che manda la query
  * e l'IP del visitatore direttamente al browser verso Nominatim/OpenStreetMap
  * (non tramite il nostro backend). Analytics: Umami self-hosted su stats.icarom.net
@@ -52,16 +54,23 @@ export default function PrivacyPolicy({ onClose }: PrivacyPolicyProps) {
           .
         </p>
         <p>
-          <strong>Cookie:</strong> nessuno. Il sito non imposta cookie, non usa localStorage né
-          sessionStorage.
+          <strong>Cookie:</strong> nessuno, verificato ispezionando il browser: il sito non
+          imposta alcun cookie e non usa sessionStorage.
+        </p>
+        <p>
+          <strong>Memoria locale:</strong> una sola voce, <code>i18nextLng</code>, che conserva la
+          lingua dell'interfaccia (italiano o inglese) così da non doverla riscegliere a ogni
+          visita. Resta sul tuo dispositivo, non viene inviata da nessuna parte e non identifica
+          nessuno. Serve a far funzionare una funzione che hai chiesto tu, quindi non richiede
+          consenso; puoi cancellarla svuotando i dati del sito dal browser.
         </p>
         <p>
           <strong>Analytics:</strong> usiamo{" "}
           <a href="https://umami.is" target="_blank" rel="noreferrer">
             Umami
           </a>
-          , uno strumento di analisi del traffico privacy-first e open source. Non usa cookie, non
-          usa localStorage/sessionStorage, non crea un identificativo persistente che ti segua tra
+          , uno strumento di analisi del traffico privacy-first e open source. Non usa cookie né
+          memoria locale, e non crea un identificativo persistente che ti segua tra
           visite o siti diversi. Raccoglie in forma aggregata: pagina visitata, referrer, paese ed
           eventualmente città (dedotti dall'IP), tipo di dispositivo e browser. Il tuo indirizzo IP
           viene hashato insieme a uno "salt" che cambia ogni giorno e non viene conservato in
@@ -144,16 +153,23 @@ export default function PrivacyPolicy({ onClose }: PrivacyPolicyProps) {
           .
         </p>
         <p>
-          <strong>Cookies:</strong> none. The site sets no cookies, uses no localStorage or
-          sessionStorage.
+          <strong>Cookies:</strong> none, verified by inspecting the browser: the site sets no
+          cookies and uses no sessionStorage.
+        </p>
+        <p>
+          <strong>Local storage:</strong> a single entry, <code>i18nextLng</code>, holding your
+          interface language (Italian or English) so you don't have to pick it again on every
+          visit. It stays on your device, is never sent anywhere and identifies nobody. It exists
+          to run a feature you asked for, so it needs no consent; you can remove it by clearing
+          the site's data in your browser.
         </p>
         <p>
           <strong>Analytics:</strong> we use{" "}
           <a href="https://umami.is" target="_blank" rel="noreferrer">
             Umami
           </a>
-          , a privacy-first, open-source traffic analytics tool. It sets no cookies, uses no
-          localStorage/sessionStorage, and creates no persistent identifier that follows you
+          , a privacy-first, open-source traffic analytics tool. It sets no cookies and no local
+          storage, and creates no persistent identifier that follows you
           across visits or sites. It collects, in aggregate form: page visited, referrer, country
           and possibly city (derived from IP), device type and browser. Your IP address is hashed
           together with a salt that changes daily and is never stored in plain text or
