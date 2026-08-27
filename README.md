@@ -71,6 +71,7 @@ The date picker's upper bound is **today**, and the default is **yesterday**. Ch
 
 - **Frontend:** React 19 + TypeScript + Vite
 - **Map:** [MapLibre GL JS](https://maplibre.org/) (WebGL) via `react-map-gl` — not Leaflet. Leaflet's raster-tile + CSS-scale zoom felt stepped on trackpads; MapLibre does real GPU-interpolated continuous zoom. (For reference: this is inherent to Leaflet, not this app — try zooming on openstreetmap.org, which uses vanilla Leaflet, for comparison.)
+- **Base map:** [OpenFreeMap](https://openfreemap.org/) (`dark` vector style, OpenStreetMap data via OpenMapTiles) — no API key, no declared request limits. The style labels in `name:latin` (Florence, Tuscany): on load they are rewritten to `name:it`, falling back to the local name, skipping motorway shields, which render `ref` ("A1") rather than a name. It used to be CARTO's `dark_all` raster tiles, which without a key started returning tiles stamped "API KEY REQUIRED" as soon as you zoomed in. Moving to a vector base map surfaced that MapLibre's worker did not survive bundling (the worker is resolved as a sibling file of `maplibre-gl.mjs`, which no longer exists after the build: tiles stayed `loading` forever, silently); the worker URL now comes from a Vite `?worker&url` import, so GeoJSON sources will work too
 - **Satellite data:** Copernicus Data Space Ecosystem (Sentinel Hub WMS) —
   - Sentinel-2 (10m): true-color, NDVI, NDWI, SWIR, NBR
   - Sentinel-3 SLSTR (~1km): real Land Surface Temperature
